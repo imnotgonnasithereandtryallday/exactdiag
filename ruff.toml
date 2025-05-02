@@ -1,0 +1,22 @@
+line-length = 120
+indent-width = 4
+target-version = "py313"
+preview = true
+
+extend-exclude = ["*.egg-info", "__pycache__", "*docs", "calculations", "figures", "**/manual/*figures", "**.pyx", "**.pyd"]
+
+[lint]
+select = ["E", "F", "W", "D", "N", "PL", "UP", "NPY"]
+
+ignore = [
+    "D100",    # undocumented-public-module
+    "D104",    # undocumented-public-package
+    "D105",    # undocumented-magic-method
+    "N801",    # non-CapWords class name
+    "UP015",   # unnecessary mode argument
+]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = false

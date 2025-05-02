@@ -1,0 +1,28 @@
+{
+    "hamiltonian": {
+        "num_rungs": 12,
+        "num_holes": 4,
+        "weights": {
+            "tl": 1,
+            "tr": 1,
+            "jl": 0.4,
+            "jr": 0.4
+        },
+        "symmetry_qs": {
+            "leg": 0,
+            "rung": 0
+        },
+        "num_threads": 8
+    },
+    "eigenpair": {
+        "num_eigenpairs": 1,
+        "num_recalculated_vecs_per_iteration": 2
+    },
+    "spectrum": {
+        "name": "offdiagonal_spectral_function",
+        "omega_max": 1,
+        "omega_min": -1,
+        "operator_symmetry_qs": null,
+        "broadening": 5e-2
+    }
+}

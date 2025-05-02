@@ -1,0 +1,75 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+        "level:time:module.func:message": {
+            "format": "%(levelname)s: %(asctime)s: %(module)s.%(funcName)s: %(message)s",
+            "datefmt": "%Y-%m-%dT%H:%M:%S%z"
+        },
+        "json": {
+            "()": "exactdiag.logging_utils.JSON_Formatter",
+            "fmt_keys": {
+                "level": "levelname",
+                "message": "message",
+                "timestamp": "timestamp",
+                "logger": "name",
+                "module": "module",
+                "function": "funcName",
+                "line": "lineno",
+                "thread_name": "threadName"
+            }
+        }
+    },
+    "filters": {
+        "this_package": {
+            "()": "exactdiag.logging_utils.This_Package_Filter"
+        },
+        "below_warning": {
+            "()": "exactdiag.logging_utils.Below_Warning_Filter"
+        }
+    },
+    "handlers": {
+        "stdout": {
+            "class": "logging.StreamHandler",
+            "level": "INFO",
+            "filters": ["below_warning"],
+            "formatter": "level:time:module.func:message",
+            "stream": "ext://sys.stdout"
+        },
+        "stderr": {
+            "class": "logging.StreamHandler",
+            "level": "WARNING",
+            "formatter": "level:time:module.func:message",
+            "stream": "ext://sys.stderr"
+        },
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "DEBUG",
+            "formatter": "json",
+            "filename": "logs/debug.log.jsonl",
+            "maxBytes": 100000,
+            "backupCount": 2
+        },
+        "queue_handler": {
+            "class": "logging.handlers.QueueHandler",
+            "handlers": [
+                "stdout",
+                "stderr",
+                "file"
+            ],
+            "filters": [
+                "this_package"
+            ],
+            "respect_handler_level": true
+        }
+    },
+    "loggers": {
+        "root": {
+            "level": "DEBUG",
+            "handlers": [
+                "queue_handler"
+            ]
+        }
+    }
+}
+ 

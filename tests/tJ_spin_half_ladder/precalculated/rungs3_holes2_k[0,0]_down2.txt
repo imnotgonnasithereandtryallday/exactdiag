@@ -1,0 +1,14 @@
+{
+  "num_rungs": 3,
+  "num_holes": 2,
+  "symmetry_qs": [0, 0],
+  "num_down_spins": 2,
+  "basis_size": 16,
+  "weights": {
+    "tl": 1, 
+    "tr": 1, 
+    "jl": 1, 
+    "jr": 1
+  },
+  "eigvals": [-6.65357393, -4.60966683, -3.44748196, -2.0        , -2.0        ]
+}

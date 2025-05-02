@@ -1,0 +1,20 @@
+build/
+dist/
+*egg-info/
+
+.venv/
+.vscode/
+.pytest_cache/
+
+calculations/
+figures/
+logs/
+__pycache__
+
+
+
+# the following ignores any files with these extension even in subfolders
+# does not ignore them if they are pulled and then changed??
+*.pyd
+*.cpp
+*.log

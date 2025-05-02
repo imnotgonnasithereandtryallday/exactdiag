@@ -1,0 +1,7 @@
+{
+  "num_rungs": 4,
+  "num_holes": 3,
+  "symmetry_qs": [1, 0],
+  "num_down_spins": 2,
+  "basis_size": 70
+}

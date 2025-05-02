@@ -1,0 +1,28 @@
+[project]
+name = "exactdiag"
+version = "0.0.2"
+dependencies = [
+    "matplotlib",
+    "numpy",
+    "scipy>1.8",
+    "jax",
+    "jaxtyping",
+]
+authors = [
+    {name = "Petr Adamus"},
+]
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENCE",]
+keywords = ["exact diagonalization",]
+
+[build-system]
+requires = ["setuptools>73.1", "cython", "numpy"]
+build-backend = "setuptools.build_meta"
+# TODO: Building is not properly configured. For now, run setup.py manually.
+
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra"
+testpaths = ["tests",]
