@@ -11,8 +11,8 @@ import exactdiag.tJ_spin_half_ladder.configs as lc
 def test_against_precalculated():
     """The calculation should reproduce basis sizes previously deemed correct."""
     collected = collect_all()
-    if not collected:
-        assert False
+    expected_num_files = 68
+    assert len(collected) == expected_num_files
     for file in collected:
         pre = Precalculated.load(file)
         config = pre.to_hamiltonian_config()
