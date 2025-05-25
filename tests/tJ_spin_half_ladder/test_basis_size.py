@@ -1,9 +1,10 @@
-import pathlib
-import json
 import glob
+import itertools
+import json
+import pathlib
 from typing import Self
-from pydantic.dataclasses import dataclass
 
+from pydantic.dataclasses import dataclass
 import scipy.special
 
 import exactdiag.tJ_spin_half_ladder.configs as lc
@@ -84,15 +85,35 @@ def test_sum_over_k():
         assert num_spin_states * num_hole_states == sum(sizes)
 
 
-def test_sum_over_holes():
-    pass
-
-
 def test_sum_over_down_spins():
-    pass
+    """Summed number of states should give values calculated using combinatorics."""
+    num_rungs = 6  # Selected arbitrarily.
+    num_nodes = 2 * num_rungs
+    config = lc.Hamiltonian_Config(
+        num_rungs=num_rungs,
+        num_holes=0,
+        weights=lc.Weights(tl=1, tr=1, jl=1, jr=1),  # Not used in this test.
+        symmetry_qs=lc.Quantum_Numbers(leg=0, rung=0),
+        num_threads=1
+    )
+    for num_holes in range(num_nodes + 1):
+        config.num_holes = num_holes
+        summed_num_states = 0
+        for num_down_spins in range(num_nodes - num_holes + 1):
+            config.total_spin_projection = num_nodes - num_holes - 2 * num_down_spins
+            for kx, ky in itertools.product(range(num_rungs//2+1), range(2)):
+                multiplier = 1 + (kx != 0 and (kx != num_rungs // 2 or num_rungs % 2))
+                config.symmetry_qs.leg = kx
+                config.symmetry_qs.rung = ky
+                _, py_basis_map, _ = config.get_translators()
+                summed_num_states += multiplier * py_basis_map.get_num_states()
+        expected_num_spin_states = 2 ** (num_nodes - num_holes)
+        expected_num_hole_states = scipy.special.comb(num_nodes, num_holes)
+        expected_sum = expected_num_spin_states * expected_num_hole_states
+        assert summed_num_states == expected_sum, num_holes
 
 
-def test_equivalent_systems():
+def test_equivalent_symmetries():
     pass
 
 
