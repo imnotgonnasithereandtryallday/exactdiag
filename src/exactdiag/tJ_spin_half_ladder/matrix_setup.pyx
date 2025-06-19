@@ -326,47 +326,6 @@ def setup_excitation_operator(initial_config: "config.Config", fixed_distances=N
             is_valid_state = is_valid_state_all_spin_up
     else:
         raise ValueError(f'{name} not supported')
-    r"""
-    elif name == 'singlet-singlet': 
-        # singlet-singlet: \Delta_i^\dagger (y)  \Delta_j (x)
-        # \Delta_i (x) = 1/sqrt(2) * (c_{i \uparrow} c_{i+x \downarrow} - c_{i \downarrow} c_{i+x \uparrow})
-        fixed_distances = np.array(fixed_distances)
-        # fixed_distances = separation in [creation singlet, annihilation singlet, between singlets]
-        #                   given by shifts [rung, leg]
-        #                = shifts corresponding to  [y, x, j-i]
-        if qx != 0 or qy != 0:
-            # what should q mean here? We could add a second q to kwargs for the second Delta operator?
-            raise ValueError(f'q != (0,0) not supported for {name}, q=({qx},{qy})')
-
-        # The annihilation part \Delta_j (x) is given by just one combination of two shifts
-        # corresponding to j, j+x. Both combinations of sign and spins are taken into account in 
-        # the get_weights_annihilation_part_singlet_singlet function.
-
-        # The startpoint i and the first shift in the first element of endpoint_shifts creates
-        # c_{i \downarrow}^\dagger c_{i+y \uparrow}^\dagger
-        # which corresponds to the second term in \Delta_i^\dagger(y)
-        # (the anticommutation cancels the sign)
-
-        # The startpoint i and the first shift in the second element of endpoint_shifts creates
-        # c_{i \downarrow}^\dagger c_{i-y \uparrow}^\dagger
-        # which corresponds to the first term in \Delta_{i-y}^\dagger(y) 
-        # Therefore, the other shifts are also adjusted. 
-        startpoints = [i for i in range(num_nodes)]
-        startpoints_weights = np.array([(0,0.5/num_nodes)]*num_nodes)
-        endpoint_shifts = np.array([(fixed_distances[0], fixed_distances[2], fixed_distances[1] + fixed_distances[2]), \
-                           (-fixed_distances[0], fixed_distances[2] - fixed_distances[0], fixed_distances[1] + fixed_distances[2] - fixed_distances[0])])
-        endpoint_weights = np.array([(0,1)]*endpoint_shifts.shape[0])
-        operator_index_combinations, combination_weights = combinations_from_start_end_points( \
-                                startpoints, endpoint_shifts, startpoints_weights, endpoint_weights, \
-                                py_symmetries, reverse=False)
-        max_num_values_per_column = 4*num_spins 
-        get_anticommutation = get_anticommutation_sign
-        is_valid_indices = NULL
-        is_valid_state = is_valid_state_unequal_spins_2holes
-        generate_new_state = remove_two_add_up_down
-        calculate_weights = get_weights_annihilation_part_singlet_singlet
-        commutes_with_symmetries = True
-    """
 
     final_config.hamiltonian.symmetry_qs.leg = (kx + qx + (num_rungs-1)//2) % num_rungs - (num_rungs-1)//2
     final_config.hamiltonian.symmetry_qs.rung = python_mod(ky+qy, 2)
@@ -447,3 +406,50 @@ def py_get_ladder_translators(config: "config.Hamiltonian_Config"
                                py_trans.cpp_shared_ptr.get()[0], config.num_threads)
     _logger.debug(f"Finished calculating translators with {config}.")
     return py_trans, py_basis, py_sym
+
+
+def get_position_correlation_operator(config: configs.Combined_Position_Config, fixed_distances) -> Sparse_Matrix:
+        # fixed_distances is a single set that should be part of the self.correlation.fixed_distances superset.
+    pass
+
+    r"""
+    elif name == 'singlet-singlet': 
+        # singlet-singlet: \Delta_i^\dagger (y)  \Delta_j (x)
+        # \Delta_i (x) = 1/sqrt(2) * (c_{i \uparrow} c_{i+x \downarrow} - c_{i \downarrow} c_{i+x \uparrow})
+        fixed_distances = np.array(fixed_distances)
+        # fixed_distances = separation in [creation singlet, annihilation singlet, between singlets]
+        #                   given by shifts [rung, leg]
+        #                = shifts corresponding to  [y, x, j-i]
+        if qx != 0 or qy != 0:
+            # what should q mean here? We could add a second q to kwargs for the second Delta operator?
+            raise ValueError(f'q != (0,0) not supported for {name}, q=({qx},{qy})')
+
+        # The annihilation part \Delta_j (x) is given by just one combination of two shifts
+        # corresponding to j, j+x. Both combinations of sign and spins are taken into account in 
+        # the get_weights_annihilation_part_singlet_singlet function.
+
+        # The startpoint i and the first shift in the first element of endpoint_shifts creates
+        # c_{i \downarrow}^\dagger c_{i+y \uparrow}^\dagger
+        # which corresponds to the second term in \Delta_i^\dagger(y)
+        # (the anticommutation cancels the sign)
+
+        # The startpoint i and the first shift in the second element of endpoint_shifts creates
+        # c_{i \downarrow}^\dagger c_{i-y \uparrow}^\dagger
+        # which corresponds to the first term in \Delta_{i-y}^\dagger(y) 
+        # Therefore, the other shifts are also adjusted. 
+        startpoints = [i for i in range(num_nodes)]
+        startpoints_weights = np.array([(0,0.5/num_nodes)]*num_nodes)
+        endpoint_shifts = np.array([(fixed_distances[0], fixed_distances[2], fixed_distances[1] + fixed_distances[2]), \
+                           (-fixed_distances[0], fixed_distances[2] - fixed_distances[0], fixed_distances[1] + fixed_distances[2] - fixed_distances[0])])
+        endpoint_weights = np.array([(0,1)]*endpoint_shifts.shape[0])
+        operator_index_combinations, combination_weights = combinations_from_start_end_points( \
+                                startpoints, endpoint_shifts, startpoints_weights, endpoint_weights, \
+                                py_symmetries, reverse=False)
+        max_num_values_per_column = 4*num_spins 
+        get_anticommutation = get_anticommutation_sign
+        is_valid_indices = NULL
+        is_valid_state = is_valid_state_unequal_spins_2holes
+        generate_new_state = remove_two_add_up_down
+        calculate_weights = get_weights_annihilation_part_singlet_singlet
+        commutes_with_symmetries = True
+    """

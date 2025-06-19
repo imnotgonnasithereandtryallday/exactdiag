@@ -14,6 +14,7 @@ from exactdiag.general.matrix_rules_utils import set_combinatorics
 import exactdiag.general.configs as gc
 from exactdiag.general.configs import Eigenpair_Config  # noqa: F401 - Reexporting for convenience.
 from exactdiag.general.types_and_constants import MATRIX_INDEX_TYPE, VALUE_INDEX_TYPE
+from exactdiag.general.sparse_matrices import Sparse_Matrix
 from exactdiag.tJ_spin_half_ladder.matrix_setup import (
     setup_hamiltonian,
     py_get_ladder_translators,
@@ -155,6 +156,11 @@ class Spectrum_Config(gc.Spectrum_Config_Base):
     def get_omegas(self):
         return np.linspace(self.omega_min, self.omega_max, self.omega_steps)
 
+@dataclass(config={"validate_assignment": True, "extra": "forbid"})
+class Position_Correlation_Config(gc.Spectrum_Config_Base):
+    # FIXME: add docstring
+    name: str
+    fixed_distances: None
 
 @dataclass
 class Config(gc.Combined_Config_Base):  # noqa: D101 - docstring inherited.
@@ -180,6 +186,13 @@ class Config(gc.Combined_Config_Base):  # noqa: D101 - docstring inherited.
         if self.spectrum is None:
             raise ValueError("Spectrum_Config is required.")
         return setup_excitation_operator(initial_config=self)
+
+
+@dataclass
+class Combined_Position_Config(gc.Combined_Config_Base):  # noqa: D101 - docstring inherited.
+    hamiltonian: Hamiltonian_Config
+    correlation: Position_Correlation_Config | None = None
+    # FIXME: What is the best workflow here?
 
 
 def _parse_hamiltonian_kwargs_intro_message(config: Hamiltonian_Config) -> str:
