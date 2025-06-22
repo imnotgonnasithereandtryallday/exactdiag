@@ -9,7 +9,7 @@ import numpy as np
 
 _logger = logging.getLogger(__name__)
 # from .tJ_spin_half_ladder.naming import get_figure_name
-# from .hubbard.naming_conventions import get_figure_name as get_hubbard_figure_name #----------------- nejak konzistentneji
+# from .hubbard.naming_conventions import get_figure_name as get_hubbard_figure_name # FIXME: Find a consistent solution
 
 
 # This module is retarded. A spectrum should know how to plot itself.
@@ -35,7 +35,7 @@ def choose_plot(name, **kwargs):
     elif name in [
         "Sq_plus",
         "Sq_prime_plus",
-    ]:  # ------------------------------------------- jak rozdelit na hubbard a ladder?
+    ]:  # TODO: How to separate hubbard and ladder?
         if "eps_range" in kwargs.keys():
             plot_Sq_plus_range(**kwargs)
         else:

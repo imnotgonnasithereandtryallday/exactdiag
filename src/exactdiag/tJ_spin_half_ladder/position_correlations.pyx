@@ -29,6 +29,8 @@ def get_hole_spin_projection_correlations(config: configs.Combined_Position_Conf
     def calculate():
         state_translator, basis_map, symmetries = config.hamiltonian.get_translators()
         eigvals, eigvecs = get_lowest_eigenpairs(config)
+        fixed_distances = np.array(config.correlation.fixed_distances)
+        spin_or_hole = config.correlation.name == "Sz_correlations"
         num_degenerate_states = 0
         for j in range(len(eigvals)):
             # average over degenerate ground states
@@ -37,9 +39,9 @@ def get_hole_spin_projection_correlations(config: configs.Combined_Position_Conf
             num_degenerate_states += 1
             gs = eigvecs[:,j]
             if j == 0:
-                varied_shifts, spectrum = calculate_hole_spin_projection_correlations(state_translator, basis_map, gs, config.correlation)
+                varied_shifts, spectrum = calculate_hole_spin_projection_correlations(state_translator, basis_map, gs, spin_or_hole, fixed_distances)
             else:
-                _, tmp_spectrum = calculate_hole_spin_projection_correlations(state_translator, basis_map, gs, config.correlation)
+                _, tmp_spectrum = calculate_hole_spin_projection_correlations(state_translator, basis_map, gs, spin_or_hole, fixed_distances)
                 spectrum += tmp_spectrum
         return varied_shifts, spectrum / num_degenerate_states
     varied_shifts, spectrum = load_calculate_save(load_fun=load_spectrum, calc_fun=calculate, save_fun=save_spectrum)

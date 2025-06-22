@@ -75,9 +75,9 @@ class Hamiltonian_Config(gc.Hamiltonian_Config_Base):
 
     def __repr__(self):
         attrs = asdict(self)
-        attrs = {k:v for k,v in attrs.items() if v is not None}
+        attrs = {k: v for k, v in attrs.items() if v is not None}
         attrs["combinatorics_table"] = "shape[{self.combinatorics_table.shape}]"
-        attrs_string = ", ".join(f"{k}={v}" for k,v in attrs.items())
+        attrs_string = ", ".join(f"{k}={v}" for k, v in attrs.items())
         return f"{type(self).__name__}({attrs_string})"
 
     def _get_default_spin_projection(self) -> int:
@@ -156,11 +156,13 @@ class Spectrum_Config(gc.Spectrum_Config_Base):
     def get_omegas(self):
         return np.linspace(self.omega_min, self.omega_max, self.omega_steps)
 
+
 @dataclass(config={"validate_assignment": True, "extra": "forbid"})
 class Position_Correlation_Config(gc.Spectrum_Config_Base):
     # FIXME: add docstring
     name: str
-    fixed_distances: None
+    fixed_distances: tuple[int]
+
 
 @dataclass
 class Config(gc.Combined_Config_Base):  # noqa: D101 - docstring inherited.

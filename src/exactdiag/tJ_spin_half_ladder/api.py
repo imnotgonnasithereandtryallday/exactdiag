@@ -5,7 +5,6 @@ import copy
 import numpy as np
 from pydantic.dataclasses import dataclass, Field
 
-from exactdiag.tJ_spin_half_ladder.configs import Config
 from exactdiag.general.lanczos_diagonalization import (
     get_lowest_eigenpairs,
     get_spectrum,
@@ -13,6 +12,8 @@ from exactdiag.general.lanczos_diagonalization import (
     Eigenvalues,
     Eigenvectors,
 )
+from exactdiag.tJ_spin_half_ladder.configs import Config, Combined_Position_Config
+from exactdiag.tJ_spi_half_ladder import position_correlations
 from exactdiag.plotting import choose_plot
 
 
@@ -82,21 +83,20 @@ def get_excitation_spectrum(config: Config, limited_qs: bool = True) -> Spectrum
     elif base_name in {"offdiag_spec_func", "offdiagonal_spectral_function"}:
         # shortened as the spectrum name was too long
         ws, spectrum, info = get_offdiagonal_spectral_function_spectra(config=config, limited_qs=limited_qs)
-
-    # the following are position spectra that do not use the lanczos method --separate them completely?
-    # elif base_name in ['hole_correlations', 'Sz_correlations']:
-    #     ws, spectrum = get_hole_spin_projection_correlations(input_processor.hamiltonian_params,
-    #         input_processor.eigenpair_params, input_processor.spectrum_params, loggers=loggers)
-    #     info = {'fixed_distances': input_processor.spectrum_params.fixed_distances}
-
-    # elif base_name == 'singlet-singlet':
-    #     fixed_distances = input_processor.spectrum_params.fixed_distances
-    #     ws, spectrum = get_singlet_singlet_correlations(input_processor.hamiltonian_params,
-    #         input_processor.eigenpair_params, input_processor.spectrum_params, loggers=loggers)
-    #     info = {'fixed_distances': fixed_distances}
-
     else:
         raise ValueError(f"{base_name} is not supported")
+    return Spectrum(ws, spectrum, config, info)
+
+
+def get_position_correlations(config: Combined_Position_Config):
+    base_name = config.spectrum.name
+    if base_name in {"hole_correlations", "Sz_correlations"}:
+        ws, spectrum = position_correlations.get_hole_spin_projection_correlations(config)
+
+    elif base_name == "singlet-singlet":
+        ws, spectrum = position_correlations.get_singlet_singlet_correlations(config)
+
+    info = {"fixed_distances": config.correlations.fixed_distances}
     return Spectrum(ws, spectrum, config, info)
 
 
@@ -190,3 +190,8 @@ def get_mkx_qxs_qys(config: Config, limited_qs: bool):
 def plot_excitation_spectrum(config: Config, show: bool = False, **kwargs) -> None:
     spectrum = get_excitation_spectrum(config=config, **kwargs)
     choose_plot(name=config.spectrum.name, spectrum=spectrum, show=show)
+
+
+def plot_position_correlation(config: Combined_Position_Config, show: bool = False) -> None:
+    spectrum = get_position_correlations(config=config)
+    choose_plot(name=config.correlation.name, spectrum=spectrum, show=show)
