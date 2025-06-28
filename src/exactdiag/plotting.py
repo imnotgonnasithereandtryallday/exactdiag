@@ -223,24 +223,22 @@ def plot_all_spectral_functions(spectrum, show=False, **kwargs):
         plt.close()
 
 
-def plot_hole_correlations(
-    ws, spectrum, spectrum_info, hamiltonian_kwargs, plot_info, show=False, periodc=(True, False), **kwargs
-):
-    fixed = plot_info["fixed_distances"]
-    spectrum /= np.amax(spectrum)
-    x = ws[:, 0]
-    y = ws[:, 1]
+def plot_hole_correlations(spectrum, show=False, periodc=(True, False)):
+    fixed = spectrum.info["fixed_distances"]
+    correlations = spectrum.spectrum / np.amax(spectrum.spectrum)
+    x = spectrum.ws[:, 0]
+    y = spectrum.ws[:, 1]
     x_len = np.amax(x) + 1
     y_len = np.amax(y) + 1
     x_shift = x_len // 2
     y_shift = (y_len - 1) // 2
-    fixed = [[(x + x_shift) % x_len, (y + y_shift) % y_len] for x, y in fixed]
+    fixed = []#[[(x + x_shift) % x_len, (y + y_shift) % y_len] for x, y in fixed]  # FIXME: What was this supposed to do?
     x = (x + x_shift) % x_len
     y = (y + y_shift) % y_len
     label_shift = (-1 + 2 * y) * 0.32
     fac = 0.7
     fac2 = fac * np.pi * 5e4
-    area = fac2 * spectrum**2
+    area = fac2 * correlations**2
     for i, (xv, yv) in enumerate(zip(x, y)):
         if [xv, yv] in fixed:
             area[i] = 0
@@ -249,10 +247,10 @@ def plot_hole_correlations(
     for v in set(x):
         plt.plot([v, v], [0, y_len - 1 + periodc[1]], "-", color="b")
     plt.scatter(x, y, s=area, color="gray")
-    for xv, yv, vv, sv in zip(x, y, spectrum, label_shift):
+    for xv, yv, vv, sv in zip(x, y, correlations, label_shift):
         if [xv, yv] not in fixed:
             plt.text(xv - 0.2, yv + sv, "%.3f" % vv)
-    plt.scatter(*zip(*fixed), s=1e-2 * fac2, edgecolors="r", facecolors="none")
+    # plt.scatter(*zip(*fixed), s=1e-2 * fac2, edgecolors="r", facecolors="none")
     plt.gcf().set_size_inches(1.5 * x_len, 1.5 * y_len)
     plt.ylim(-0.5, 1.5)
     plt.axis("off")

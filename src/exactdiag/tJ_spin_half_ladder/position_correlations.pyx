@@ -29,7 +29,7 @@ def get_hole_spin_projection_correlations(config: configs.Combined_Position_Conf
     def calculate():
         state_translator, basis_map, symmetries = config.hamiltonian.get_translators()
         eigvals, eigvecs = get_lowest_eigenpairs(config)
-        fixed_distances = np.array(config.correlation.fixed_distances)
+        fixed_distances = np.array(config.correlation.fixed_distances, dtype=np.int32)
         spin_or_hole = config.correlation.name == "Sz_correlations"
         num_degenerate_states = 0
         for j in range(len(eigvals)):
@@ -44,7 +44,8 @@ def get_hole_spin_projection_correlations(config: configs.Combined_Position_Conf
                 _, tmp_spectrum = calculate_hole_spin_projection_correlations(state_translator, basis_map, gs, spin_or_hole, fixed_distances)
                 spectrum += tmp_spectrum
         return varied_shifts, spectrum / num_degenerate_states
-    varied_shifts, spectrum = load_calculate_save(load_fun=load_spectrum, calc_fun=calculate, save_fun=save_spectrum)
+    path = config.get_spectrum_path()
+    varied_shifts, spectrum = load_calculate_save(path, load_fun=load_spectrum, calc_fun=calculate, save_fun=save_spectrum)
     return varied_shifts, spectrum
 
 def get_singlet_singlet_correlations(config: configs.Combined_Position_Config):
@@ -52,7 +53,7 @@ def get_singlet_singlet_correlations(config: configs.Combined_Position_Config):
         state_translator, basis_map, py_symmetries = config.hamiltonian.get_translators()
         eigvals, eigvecs = get_lowest_eigenpairs(config)
         num_nodes = config.hamiltonian.num_nodes
-        fixed_distances = config.correlation.fixed_distances
+        fixed_distances = np.array(config.correlation.fixed_distances, dtype=np.int32)
         num_degenerate_states = 0
         get_operaor = lambda fixed_distances: get_position_correlation_operator(config, fixed_distances)
         for j in range(len(eigvals)):
@@ -67,7 +68,8 @@ def get_singlet_singlet_correlations(config: configs.Combined_Position_Config):
                 _, tmp_spectrum = calculate_singlet_singlet_correlations(num_nodes, fixed_distances, gs, py_symmetries, get_operaor)
                 spectrum += tmp_spectrum
         return varied_shifts, spectrum / num_degenerate_states
-    varied_shifts, spectrum = load_calculate_save(load_fun=load_spectrum, calc_fun=calculate, save_fun=save_spectrum)
+    path = config.get_spectrum_path()
+    varied_shifts, spectrum = load_calculate_save(path, load_fun=load_spectrum, calc_fun=calculate, save_fun=save_spectrum)
     return varied_shifts, spectrum
 
 def calculate_hole_spin_projection_correlations(Py_State_Translator py_state_translator, Py_Basis_Index_Map basis_map, VALUE_TYPE_t[:] eigvec, \
@@ -81,7 +83,7 @@ def calculate_hole_spin_projection_correlations(Py_State_Translator py_state_tra
     cdef int i, dist_ind
     cdef int num_fixed = fixed_distances.shape[0] if fixed_distances.shape[1] > 0 else 0
     position_combinations = np.empty((num_nodes,num_nodes,2+num_fixed),dtype=np_pos_int)
-    cdef int[:,:] varied_shifts = np.empty([num_nodes,py_state_translator.get_symmetries().num_shifts], dtype=np.int32)
+    cdef int[:,:] varied_shifts = np.empty([num_nodes,py_state_translator.get_symmetries().get_num_shifts()], dtype=np.int32)
     
     if spin_or_hole:
         aggregator = DUMMY_AGGREGATOR

@@ -1,0 +1,202 @@
+[
+    {
+        "hamiltonian": {
+            "num_rungs": 7,
+            "num_holes": 2,
+            "weights": {
+                "tl": 0.45,
+                "tr": 0.36,
+                "jl": 0.15,
+                "jr": 0.12
+            },
+            "symmetry_qs": {
+                "leg": 0,
+                "rung": 0
+            },
+            "num_threads": 8
+        },
+        "eigenpair": {
+            "num_eigenpairs": 5
+        },
+        "correlation": {
+            "name": "hole_correlations",
+            "fixed_distances": [[]]
+        },
+        "probabilities": [1, 0.144, 0.030, 0.149, 0.025, 0.114, 0.019, 0.092]
+    },
+    {
+        "hamiltonian": {
+            "num_rungs": 8,
+            "num_holes": 2,
+            "weights": {
+                "tl": 0.45,
+                "tr": 0.36,
+                "jl": 0.15,
+                "jr": 0.12
+            },
+            "symmetry_qs": {
+                "leg": 4,
+                "rung": 0
+            },
+            "num_threads": 8
+        },
+        "eigenpair": {
+            "num_eigenpairs": 5
+        },
+        "correlation": {
+            "name": "hole_correlations",
+            "fixed_distances": [[]]
+        },
+        "probabilities": [1, 0.026, 0.032, 0.040, 0.076, 0.055, 0.114, 0.072, 0.123, 0.073]
+    },
+    {
+        "hamiltonian": {
+            "num_rungs": 8,
+            "num_holes": 2,
+            "weights": {
+                "tl": 0.45,
+                "tr": 0.36,
+                "jl": 0.15,
+                "jr": 0.15
+            },
+            "symmetry_qs": {
+                "leg": 0,
+                "rung": 0
+            },
+            "num_threads": 8
+        },
+        "eigenpair": {
+            "num_eigenpairs": 5
+        },
+        "correlation": {
+            "name": "hole_correlations",
+            "fixed_distances": [[]]
+        },
+        "probabilities": [1, 0.127, 0.037, 0.129, 0.041, 0.084, 0.045, 0.057, 0.043, 0.045]
+    },
+    {
+        "hamiltonian": {
+            "num_rungs": 8,
+            "num_holes": 2,
+            "weights": {
+                "tl": 0.45,
+                "tr": 0.36,
+                "jl": 0.15,
+                "jr": 0.20
+            },
+            "symmetry_qs": {
+                "leg": 0,
+                "rung": 0
+            },
+            "num_threads": 8
+        },
+        "eigenpair": {
+            "num_eigenpairs": 5
+        },
+        "correlation": {
+            "name": "hole_correlations",
+            "fixed_distances": [[]]
+        },
+        "probabilities": [1, 0.179, 0.043, 0.164, 0.033, 0.082, 0.027, 0.039, 0.022, 0.024]
+    },
+    {
+        "hamiltonian": {
+            "num_rungs": 9,
+            "num_holes": 2,
+            "weights": {
+                "tl": 0.45,
+                "tr": 0.36,
+                "jl": 0.15,
+                "jr": 0.12
+            },
+            "symmetry_qs": {
+                "leg": 0,
+                "rung": 0
+            },
+            "num_threads": 8
+        },
+        "eigenpair": {
+            "num_eigenpairs": 5
+        },
+        "correlation": {
+            "name": "hole_correlations",
+            "fixed_distances": [[]]
+        },
+        "probabilities": [1, 0.072, 0.028, 0.081, 0.046, 0.072, 0.059, 0.063, 0.061, 0.053]
+    },
+    {
+        "hamiltonian": {
+            "num_rungs": 10,
+            "num_holes": 2,
+            "weights": {
+                "tl": 0.45,
+                "tr": 0.36,
+                "jl": 0.15,
+                "jr": 0.12
+            },
+            "symmetry_qs": {
+                "leg": 0,
+                "rung": 0
+            },
+            "num_threads": 8
+        },
+        "eigenpair": {
+            "num_eigenpairs": 5
+        },
+        "correlation": {
+            "name": "hole_correlations",
+            "fixed_distances": [[]]
+        },
+        "probabilities": [1, 0.105, 0.032, 0.112, 0.038, 0.083, 0.038, 0.059, 0.026, 0.034, 0.023, 0.027]
+    },
+    {
+        "hamiltonian": {
+            "num_rungs": 11,
+            "num_holes": 2,
+            "weights": {
+                "tl": 0.45,
+                "tr": 0.36,
+                "jl": 0.15,
+                "jr": 0.12
+            },
+            "symmetry_qs": {
+                "leg": 0,
+                "rung": 0
+            },
+            "num_threads": 8
+        },
+        "eigenpair": {
+            "num_eigenpairs": 5
+        },
+        "correlation": {
+            "name": "hole_correlations",
+            "fixed_distances": [[]]
+        },
+        "probabilities": [1, 0.105, 0.033, 0.113, 0.041, 0.085, 0.038, 0.058, 0.022, 0.030, 0.012, 0.016]
+    },
+    {
+        "hamiltonian": {
+            "num_rungs": 12,
+            "num_holes": 2,
+            "weights": {
+                "tl": 0.45,
+                "tr": 0.36,
+                "jl": 0.15,
+                "jr": 0.12
+            },
+            "symmetry_qs": {
+                "leg": 0,
+                "rung": 0
+            },
+            "num_threads": 8
+        },
+        "eigenpair": {
+            "num_eigenpairs": 5
+        },
+        "correlation": {
+            "name": "hole_correlations",
+            "fixed_distances": [[]]
+        },
+        "probabilities": [1, 0.084, 0.027, 0.091, 0.036, 0.072, 0.040, 0.055, 0.032, 0.034, 0.026, 0.022, 0.024, 0.019]
+    }
+]

@@ -3,6 +3,7 @@ import logging
 import copy
 
 import numpy as np
+from pydantic import field_validator
 from pydantic.dataclasses import dataclass, Field
 
 from exactdiag.general.lanczos_diagonalization import (
@@ -12,8 +13,8 @@ from exactdiag.general.lanczos_diagonalization import (
     Eigenvalues,
     Eigenvectors,
 )
+from exactdiag.tJ_spin_half_ladder import position_correlations
 from exactdiag.tJ_spin_half_ladder.configs import Config, Combined_Position_Config
-from exactdiag.tJ_spi_half_ladder import position_correlations
 from exactdiag.plotting import choose_plot
 
 
@@ -60,8 +61,13 @@ class Spectrum:
     # TODO: return from more functions // make staticmethod?
     ws: np.ndarray
     spectrum: np.ndarray
-    config: Config
+    config: Config | Combined_Position_Config
     info: dict = Field(default_factory=dict)
+
+    @field_validator("ws", "spectrum", mode="before")
+    @classmethod
+    def _validate_ndarray(cls, value):
+        return np.array(value)
 
 
 def get_excitation_spectrum(config: Config, limited_qs: bool = True) -> Spectrum:
@@ -89,14 +95,14 @@ def get_excitation_spectrum(config: Config, limited_qs: bool = True) -> Spectrum
 
 
 def get_position_correlations(config: Combined_Position_Config):
-    base_name = config.spectrum.name
+    base_name = config.correlation.name
     if base_name in {"hole_correlations", "Sz_correlations"}:
         ws, spectrum = position_correlations.get_hole_spin_projection_correlations(config)
 
     elif base_name == "singlet-singlet":
         ws, spectrum = position_correlations.get_singlet_singlet_correlations(config)
 
-    info = {"fixed_distances": config.correlations.fixed_distances}
+    info = {"fixed_distances": config.correlation.fixed_distances}
     return Spectrum(ws, spectrum, config, info)
 
 

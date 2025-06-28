@@ -408,7 +408,7 @@ def py_get_ladder_translators(config: "config.Hamiltonian_Config"
     return py_trans, py_basis, py_sym
 
 
-def get_position_correlation_operator(config: configs.Combined_Position_Config, fixed_distances) -> Sparse_Matrix:
+def get_position_correlation_operator(config: "configs.Combined_Position_Config", fixed_distances) -> "Sparse_Matrix":
         # TODO: Typing: fixed_distances is a single set that should be part of the self.correlation.fixed_distances superset.
     num_rungs = config.hamiltonian.num_rungs
     num_holes = config.hamiltonian.num_holes 

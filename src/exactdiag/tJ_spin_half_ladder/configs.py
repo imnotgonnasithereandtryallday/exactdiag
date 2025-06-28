@@ -15,11 +15,7 @@ import exactdiag.general.configs as gc
 from exactdiag.general.configs import Eigenpair_Config  # noqa: F401 - Reexporting for convenience.
 from exactdiag.general.types_and_constants import MATRIX_INDEX_TYPE, VALUE_INDEX_TYPE
 from exactdiag.general.sparse_matrices import Sparse_Matrix
-from exactdiag.tJ_spin_half_ladder.matrix_setup import (
-    setup_hamiltonian,
-    py_get_ladder_translators,
-    setup_excitation_operator,
-)
+from exactdiag.tJ_spin_half_ladder import matrix_setup
 
 _logger = logging.getLogger(__name__)
 
@@ -115,11 +111,11 @@ class Hamiltonian_Config(gc.Hamiltonian_Config_Base):
     def get_translators(self):  # noqa: D102 docstring inherited
         # TODO: Make the typing visible to python.
         # NOTE: This is here as a first step to decouple matrix_setup from cluster info.
-        return py_get_ladder_translators(self)
+        return matrix_setup.py_get_ladder_translators(self)
 
     @override
     def setup(self):  # noqa: D102 docstring inherited
-        return setup_hamiltonian(self)
+        return matrix_setup.setup_hamiltonian(self)
 
     @override
     def get_symmetry_info(self):  # noqa: D102 docstring inherited
@@ -161,7 +157,7 @@ class Spectrum_Config(gc.Spectrum_Config_Base):
 class Position_Correlation_Config(gc.Spectrum_Config_Base):
     # FIXME: add docstring
     name: str
-    fixed_distances: tuple[int]
+    fixed_distances: tuple[tuple[int, ...], ...]  # TODO: make it a list of dicts with rung, leg keys
 
 
 @dataclass
@@ -187,7 +183,7 @@ class Config(gc.Combined_Config_Base):  # noqa: D101 - docstring inherited.
     def setup_excitation_operator(self):  # noqa: D102 - docstring inherited.
         if self.spectrum is None:
             raise ValueError("Spectrum_Config is required.")
-        return setup_excitation_operator(initial_config=self)
+        return matrix_setup.setup_excitation_operator(initial_config=self)
 
 
 @dataclass
@@ -196,6 +192,21 @@ class Combined_Position_Config(gc.Combined_Config_Base):  # noqa: D101 - docstri
     correlation: Position_Correlation_Config | None = None
     # FIXME: What is the best workflow here?
 
+
+    @override
+    def get_spectrum_path(self, operator_name_suffix: str = ""):  # noqa: D102 - docstring inherited.
+        if self.correlation is None:
+            raise ValueError("Position_Correlation_Config is required.")
+        system_folder = self.hamiltonian.get_calc_folder()
+        folder = system_folder / f"{self.correlation.name}_spectra"
+        suffix = _get_position_correlation_figure_suffix(self.hamiltonian, self.correlation, operator_name_suffix)
+        path = folder / f"{self.correlation.name}{suffix}.npz"
+        return path
+
+    @override
+    def setup_excitation_operator(self):  # noqa: D102 - docstring inherited.
+        # TODO: fill in
+        pass
 
 def _parse_hamiltonian_kwargs_intro_message(config: Hamiltonian_Config) -> str:
     first_line = f"{config.num_rungs} rungs, {config.num_holes} holes, k={config.symmetry_qs}, Sz={config.total_spin_projection}/2"
@@ -233,4 +244,13 @@ def _get_spectrum_figure_suffix(
     broad_string = f"_broad{spectrum_config.broadening}"
     vecs_string = f"_vecs{spectrum_config.num_lanczos_vecs}"
     suffix = f"{operator_name_suffix}{q_string}{ws_string}{broad_string}{vecs_string}_{weight_string}"
+    return suffix
+
+
+def _get_position_correlation_figure_suffix(
+    hamiltonian_config: Hamiltonian_Config, correlation_config: Position_Correlation_Config, operator_name_suffix: str
+):
+    weight_string = "_".join([f"{name}{weight}" for name, weight in asdict(hamiltonian_config.weights).items()])
+    operator_name_suffix = f"_{operator_name_suffix}" if operator_name_suffix else ""
+    suffix = f"{operator_name_suffix}_fixed{correlation_config.fixed_distances}_{weight_string}"
     return suffix

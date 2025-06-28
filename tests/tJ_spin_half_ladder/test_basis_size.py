@@ -43,9 +43,10 @@ def test_equivalent_systems():
 def test_inter_symmetry():
     """General and specialized symmetries should give the same basis sizes."""
 
-def collect_all():
+
+def collect_all(glob_pattern="*"):
     folder = pathlib.Path(__file__).parent / "precalculated"
-    return glob.glob(f"{(folder / '*')!s}")
+    return glob.glob(f"{(folder / glob_pattern)!s}")
 
 
 def collect(num_rungs: int, num_holes: int, num_down_spins: int):
