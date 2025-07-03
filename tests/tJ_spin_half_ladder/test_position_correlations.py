@@ -43,12 +43,12 @@ def _get_correlation_diffs(path: pathlib.Path, normalize: bool) -> list[np.ndarr
             # We normalize the fixed probabilities to 1 as they are not given in the articles.
             probabilities /= probabilities[0]
         diffs.append(probabilities[:len(target)] - target)
-        print(probabilities)
     return diffs
 
 
 def test_singlet_singlet_correlations_against_precalculated():
     """Calculated singlet-singlet correlations should match values published in my dissertation."""
+    # NOTE: Takes around 15 minutes on my pc.
     folder = pathlib.Path(__file__).parent / "precalculated"
     diffs = _get_correlation_diffs(folder / "singlet_correlations_scco.txt", normalize=False)
     listed_precision = 1e-3

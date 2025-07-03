@@ -461,8 +461,6 @@ def get_position_correlation_operator(config: "configs.Combined_Position_Config"
     startpoints_weights = np.array([(0,0.5/num_nodes)]*num_nodes)
     endpoint_shifts = np.array([(fixed_distances[0], fixed_distances[2], fixed_distances[1] + fixed_distances[2]), \
                         (-fixed_distances[0], fixed_distances[2] - fixed_distances[0], fixed_distances[1] + fixed_distances[2] - fixed_distances[0])])
-    endpoint_shifts[..., 0] = np.mod(endpoint_shifts[..., 0], config.hamiltonian.num_rungs)
-    endpoint_shifts[..., 1] = np.abs(endpoint_shifts[..., 1])  # FIXME: fix index from negative shifts, add tests for that
     endpoint_weights = np.array([(0,1)]*endpoint_shifts.shape[0])
     operator_index_combinations, combination_weights = combinations_from_start_end_points( \
                             startpoints, endpoint_shifts, startpoints_weights, endpoint_weights, \
