@@ -55,7 +55,7 @@ def get_singlet_singlet_correlations(config: configs.Combined_Position_Config):
         num_nodes = config.hamiltonian.num_nodes
         fixed_distances = np.array(config.correlation.fixed_distances, dtype=np.int32)
         num_degenerate_states = 0
-        get_operaor = lambda fixed_distances: get_position_correlation_operator(config, fixed_distances)
+        get_operaor = lambda fixed_distances: get_position_correlation_operator(config, fixed_distances)[0]()
         for j in range(len(eigvals)):
             # average over degenerate ground states
             if (abs(eigvals[0]-eigvals[j]) > 1e-6):
@@ -117,7 +117,7 @@ def calculate_singlet_singlet_correlations(int num_nodes, int[:,:] fixed_distanc
     shifts[:2,:] = fixed_distances
     for i in range(num_nodes):
         symmetries.cpp_shared_ptr.get().get_unit_shifts_from_index(i, &shifts[2,0])
-        operator = get_operator(fixed_distances=shifts)
+        operator = get_operator(shifts)
         corrs[i] = np.real(np.vdot(eigvec, operator.dot(eigvec)))
         varied_shifts[i,:] = shifts[2,:]
     return varied_shifts, corrs

@@ -192,6 +192,10 @@ class Combined_Position_Config(gc.Combined_Config_Base):  # noqa: D101 - docstri
     correlation: Position_Correlation_Config | None = None
     # FIXME: What is the best workflow here?
 
+    def __post_init__(self):  # FIXME: the attribute should still be called spectrum probably?
+        super().__post_init__()
+        if self.correlation is not None and self.correlation.num_threads is None:
+            self.correlation.num_threads = self.hamiltonian.num_threads
 
     @override
     def get_spectrum_path(self, operator_name_suffix: str = ""):  # noqa: D102 - docstring inherited.
@@ -252,5 +256,6 @@ def _get_position_correlation_figure_suffix(
 ):
     weight_string = "_".join([f"{name}{weight}" for name, weight in asdict(hamiltonian_config.weights).items()])
     operator_name_suffix = f"_{operator_name_suffix}" if operator_name_suffix else ""
-    suffix = f"{operator_name_suffix}_fixed{correlation_config.fixed_distances}_{weight_string}"
+    fixed_string = f"{correlation_config.fixed_distances}"
+    suffix = f"{operator_name_suffix}_fixed{fixed_string}_{weight_string}"
     return suffix

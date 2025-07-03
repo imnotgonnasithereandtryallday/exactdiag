@@ -279,20 +279,20 @@ def plot_Sz_position_correlations(spectrum, spectrum_info, hamiltonian_kwargs, p
         plt.close()
 
 
-def plot_singlet_correlations(ws, spectrum, spectrum_info, hamiltonian_kwargs, plot_info, show=False, **kwargs):
-    fixed_distances = plot_info["fixed_distances"]
+def plot_singlet_correlations(spectrum, show=False):
+    fixed_distances = spectrum.info["fixed_distances"]
     plt.title(rf"intra-singlet separations: $\alpha=${fixed_distances[0]}, $\beta=${fixed_distances[1]}")
-    y = ws[:, 1]
+    y = spectrum.ws[:, 1]
     markers = "sopD^"
     for i, v in enumerate(set(y)):
         label = f"leg distance = {v}"
         y_mask = y == v
-        x = ws[y_mask, 0]
-        positive_mask = np.logical_and(spectrum[:] >= 0, y_mask)
-        positive = spectrum[positive_mask]
-        pos_x = ws[positive_mask, 0]
+        x = spectrum.ws[y_mask, 0]
+        positive_mask = np.logical_and(spectrum.spectrum[:] >= 0, y_mask)
+        positive = spectrum.spectrum[positive_mask]
+        pos_x = spectrum.ws[positive_mask, 0]
         c = f"C{i % 9}"
-        plt.plot(x, np.abs(spectrum[y_mask]), label=label, marker=markers[i], fillstyle="none", c=c)
+        plt.plot(x, np.abs(spectrum.spectrum[y_mask]), label=label, marker=markers[i], fillstyle="none", c=c)
         plt.plot(pos_x, positive, marker=markers[i], lw=0, c=c)
 
     plt.legend()
@@ -301,7 +301,7 @@ def plot_singlet_correlations(ws, spectrum, spectrum_info, hamiltonian_kwargs, p
 
     plt.yscale("log")
     plt.ylim([1e-5, 1])
-    plt.xlim([0, np.amax(ws[:, 0])])
+    plt.xlim([0, np.amax(spectrum.ws[:, 0])])
 
     # folder,suffix = get_figure_name(hamiltonian_kwargs,spectrum_info)
     # plt.savefig(f'{folder}singlet-singlet_correlations{suffix}.pdf', bbox_inches='tight')

@@ -408,8 +408,8 @@ def py_get_ladder_translators(config: "config.Hamiltonian_Config"
     return py_trans, py_basis, py_sym
 
 
-def get_position_correlation_operator(config: "configs.Combined_Position_Config", fixed_distances) -> "Sparse_Matrix":
-        # TODO: Typing: fixed_distances is a single set that should be part of the self.correlation.fixed_distances superset.
+def get_position_correlation_operator(config: "configs.Combined_Position_Config", fixed_distances):
+        # TODO: Typing: for singlet-singlet, fixed_distances is a list of 3 shifts (leg, rung).
     num_rungs = config.hamiltonian.num_rungs
     num_holes = config.hamiltonian.num_holes 
     cdef pos_int num_nodes = config.hamiltonian.num_nodes
@@ -461,6 +461,8 @@ def get_position_correlation_operator(config: "configs.Combined_Position_Config"
     startpoints_weights = np.array([(0,0.5/num_nodes)]*num_nodes)
     endpoint_shifts = np.array([(fixed_distances[0], fixed_distances[2], fixed_distances[1] + fixed_distances[2]), \
                         (-fixed_distances[0], fixed_distances[2] - fixed_distances[0], fixed_distances[1] + fixed_distances[2] - fixed_distances[0])])
+    endpoint_shifts[..., 0] = np.mod(endpoint_shifts[..., 0], config.hamiltonian.num_rungs)
+    endpoint_shifts[..., 1] = np.abs(endpoint_shifts[..., 1])  # FIXME: fix index from negative shifts, add tests for that
     endpoint_weights = np.array([(0,1)]*endpoint_shifts.shape[0])
     operator_index_combinations, combination_weights = combinations_from_start_end_points( \
                             startpoints, endpoint_shifts, startpoints_weights, endpoint_weights, \
@@ -486,7 +488,7 @@ def get_position_correlation_operator(config: "configs.Combined_Position_Config"
 
     symmetry_strings = ['sorted']  
     shape = [initial_basis_map.get().get_num_states(), initial_basis_map.get().get_num_states()]
-    shift_string = f'_shifts{[[i for i in shift] for shift in fixed_distances]}' if fixed_distances is not None else '' 
+    shift_string = f'_shifts{fixed_distances.tolist()}'
     full_name = f'{config.correlation.name}{shift_string}'         
     signature = Signature(
         matrix_name=full_name,
