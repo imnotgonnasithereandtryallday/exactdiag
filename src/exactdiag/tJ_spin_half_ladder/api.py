@@ -1,6 +1,7 @@
 from itertools import product
 import logging
 import copy
+import pathlib
 
 import numpy as np
 from pydantic import field_validator
@@ -68,6 +69,12 @@ class Spectrum:
     @classmethod
     def _validate_ndarray(cls, value):
         return np.array(value)
+
+    def get_figure_path(self, operator_name_suffix: str = "") -> pathlib.Path:
+        data_path = self.config.get_spectrum_path(operator_name_suffix)
+        rel_path = data_path.parents[1].relative_to(self.config.hamiltonian.get_calc_folder())
+        figure_path = self.config.hamiltonian.get_figures_folder() / rel_path / f"{data_path.stem}.pdf"
+        return figure_path
 
 
 def get_excitation_spectrum(config: Config, limited_qs: bool = True) -> Spectrum:

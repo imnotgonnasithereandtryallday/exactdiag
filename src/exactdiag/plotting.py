@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
 def choose_plot(name, **kwargs):
     if name == "Szq":
         plot_Szq(**kwargs)
-    elif name in ["current_rung", "current_leg"]:
+    elif name in {"current_rung", "current_leg"}:
         rung_leg = name.split("_")[1]
         plot_current_rung_leg(rung_leg=rung_leg, **kwargs)
     elif name == "spectral_function":
@@ -32,10 +32,8 @@ def choose_plot(name, **kwargs):
     elif name == "singlet-singlet":
         plot_singlet_correlations(**kwargs)
 
-    elif name in [
-        "Sq_plus",
-        "Sq_prime_plus",
-    ]:  # TODO: How to separate hubbard and ladder?
+    elif name in {"Sq_plus", "Sq_prime_plus"}:
+        # TODO: How to separate hubbard and ladder?
         if "eps_range" in kwargs.keys():
             plot_Sq_plus_range(**kwargs)
         else:
@@ -63,19 +61,15 @@ def plot_Szq(spectrum, show: bool = False):  # todo type spectrum
     k_size = 0.5 / mkx
     extent = -k_size, 1 + k_size, np.nanmin(ws), np.nanmax(ws)
     aspect = 1.3
-    # folder,suffix = get_figure_name(spectrum.config.hamiltonian ,spectrum_info) #---------------------------- make this an argument
-    data_path = spectrum.config.get_spectrum_path()  # FIXME: Simplify this.
-    rel_path = data_path.parents[1].relative_to(spectrum.config.hamiltonian.get_calc_folder())
     for y in range(spectrum.spectrum.shape[1]):
+        plt.subplots()
         ys = ext_spectrum[:, y, :].T
         plt.imshow(ys, aspect=aspect, origin="lower", cmap=cm.gnuplot, extent=extent)
         cbar = plt.colorbar()
         plt.xlabel(r"$k_x \, [2\pi / a]$")  # TODO: adjust depending on plot_info
         plt.ylabel(r"$\omega$ [eV]")
         cbar.set_label(r"$\chi$ [a. u.]")
-        # plt.savefig(f'{folder}Szq_qy{y}_map{suffix}.pdf', bbox_inches='tight')
-        figure_path = spectrum.config.hamiltonian.get_figures_folder() / rel_path / f"{data_path.stem}.pdf"
-        plt.savefig(figure_path, bbox_inches="tight")
+        plt.savefig(spectrum.get_figure_path(operator_name_suffix=f"qy{y}_map"), bbox_inches="tight")
         if show:
             plt.show()
         else:
@@ -87,9 +81,7 @@ def plot_Szq(spectrum, show: bool = False):  # todo type spectrum
         plt.ylim([0, np.nanmax(dos)])
         plt.xlabel(r"$\omega$ [eV]")
         plt.ylabel(r"DOS")
-        # plt.savefig(f'{folder}Szq_qy{y}_dos{suffix}.pdf', bbox_inches='tight')
-        figure_path = spectrum.config.hamiltonian.get_figures_folder() / rel_path / f"{data_path.stem}_dos.pdf"
-        plt.savefig(figure_path, bbox_inches="tight")
+        plt.savefig(spectrum.get_figure_path(operator_name_suffix=f"qy{y}_dos"), bbox_inches="tight")
         if show:
             plt.show()
         else:
@@ -107,6 +99,7 @@ def plot_current_rung_leg(spectrum, show=False, **kwargs):
     # TODO: the peak should be present if the initial state is degenerate and we for some reason
     #       shouldn't average over the degenerate states!
 
+    plt.subplots()
     plt.plot(ws, divided_spectrum)
     plt.xlim([0, ws[-1]])
     plt.ylim([0, np.nanmax(divided_spectrum)])
@@ -119,12 +112,7 @@ def plot_current_rung_leg(spectrum, show=False, **kwargs):
         else (0, 0)  # FIXME: this should be handled elsewhere.
     )
     plt.title(rf"$q_x, q_y = {qs[0]:g}, {qs[1]:g}$")
-    # folder,suffix = get_figure_name(hamiltonian_kwargs,spectrum_info)
-    # plt.savefig(f'{folder}current_{rung_leg}{suffix}.pdf', bbox_inches='tight')
-    data_path = spectrum.config.get_spectrum_path()  # FIXME: Simplify this.
-    rel_path = data_path.parents[1].relative_to(spectrum.config.hamiltonian.get_calc_folder())
-    figure_path = spectrum.config.hamiltonian.get_figures_folder() / rel_path / f"{data_path.stem}.pdf"
-    plt.savefig(figure_path, bbox_inches="tight")
+    plt.savefig(spectrum.get_figure_path(), bbox_inches="tight")
     if show:
         plt.show()
     else:
@@ -136,8 +124,7 @@ def plot_all_offdiagonal_spectral_functions(
 ):
     # ws: Energies of the calculated spectra. ws[i,:] gives the energies of spectrum[i,:] for any index i in plot_info['qs_list'].
     # spectrum: Response spectra. spectrum[i,:] gives the response for any index i in plot_info['qs_list'].
-    figsize = (8, 3)
-    plt.gcf().set_size_inches(*figsize)
+    plt.subplots(figsize=(8, 3))
     xlim = [np.amin(ws), np.amax(ws)]
     for re_im_label, f in [("Im", np.real), ("Re", np.imag)]:
         # imaginary part of \tilde{F} as defined in poilblanc 2003 prl
@@ -164,11 +151,10 @@ def plot_all_offdiagonal_spectral_functions(
 
         plt.xlabel(r"$\omega$ [eV]")
         plt.ylabel(f"{re_im_label}" + r"$\tilde{F}_k$")
-        # folder,suffix = get_figure_name(hamiltonian_kwargs,spectrum_info)
-        # plt.savefig(f'{folder}{re_im_label}_offdiag_spec_func_all{suffix}.pdf', bbox_inches='tight')
+        plt.savefig(spectrum.get_figure_path(operator_name_suffix="offdiag_spec_func_all"), bbox_inches="tight")
         if show:
             plt.tight_layout()
-            plt.show()  # ----------------------------- how to make the window not block further computation AND survive after the program finishes?
+            plt.show()  # TODO: how to make the window not block further computation AND survive after the program finishes?
         else:
             plt.close()
 
@@ -177,8 +163,7 @@ def plot_all_spectral_functions(spectrum, show=False, **kwargs):
     # ws: Energies of the calculated spectra. ws[i,pm:] gives the energies of spectrum[i,pm,:] for any index i in plot_info['qs_list'].
     #     pm in [0,1] stands for creation or annihilation part of the spectral function.
     # spectrum: Response spectra. spectrum[i,pm,:] gives the response for any index i in plot_info['qs_list'].
-    figsize = (8, 3)
-    plt.gcf().set_size_inches(*figsize)
+    plt.subplots(figsize=(8, 3))
     for i, (qx, qy) in enumerate(spectrum.info["qs_list"]):
         for plus_minus in range(2):
             label = (
@@ -212,10 +197,7 @@ def plot_all_spectral_functions(spectrum, show=False, **kwargs):
 
     plt.xlabel(r"$\omega$ [eV]")
     plt.ylabel(r"$A_k$")
-    data_path = spectrum.config.get_spectrum_path()  # FIXME: Simplify this.
-    rel_path = data_path.parents[1].relative_to(spectrum.config.hamiltonian.get_calc_folder())
-    figure_path = spectrum.config.hamiltonian.get_figures_folder() / rel_path / f"{data_path.stem}.pdf"
-    plt.savefig(figure_path, bbox_inches="tight")
+    plt.savefig(spectrum.get_figure_path(), bbox_inches="tight")
     if show:
         plt.tight_layout()
         plt.show()
@@ -232,13 +214,14 @@ def plot_hole_correlations(spectrum, show=False, periodc=(True, False)):
     y_len = np.amax(y) + 1
     x_shift = x_len // 2
     y_shift = (y_len - 1) // 2
-    fixed = []#[[(x + x_shift) % x_len, (y + y_shift) % y_len] for x, y in fixed]  # FIXME: What was this supposed to do?
+    fixed = []  # [[(x + x_shift) % x_len, (y + y_shift) % y_len] for x, y in fixed]  # FIXME: What was this supposed to do?
     x = (x + x_shift) % x_len
     y = (y + y_shift) % y_len
     label_shift = (-1 + 2 * y) * 0.32
     fac = 0.7
     fac2 = fac * np.pi * 5e4
     area = fac2 * correlations**2
+    fig, axes = plt.subplots(figsize=(1.5 * x_len, 1.5 * y_len))
     for i, (xv, yv) in enumerate(zip(x, y)):
         if [xv, yv] in fixed:
             area[i] = 0
@@ -251,13 +234,11 @@ def plot_hole_correlations(spectrum, show=False, periodc=(True, False)):
         if [xv, yv] not in fixed:
             plt.text(xv - 0.2, yv + sv, "%.3f" % vv)
     # plt.scatter(*zip(*fixed), s=1e-2 * fac2, edgecolors="r", facecolors="none")
-    plt.gcf().set_size_inches(1.5 * x_len, 1.5 * y_len)
     plt.ylim(-0.5, 1.5)
     plt.axis("off")
-    plt.gcf().set_dpi(100)
+    fig.set_dpi(100)
 
-    # folder,suffix = get_figure_name(hamiltonian_kwargs,spectrum_info)
-    # plt.savefig(f'{folder}hole_correlations{suffix}.pdf', bbox_inches='tight')
+    plt.savefig(spectrum.get_figure_path(), bbox_inches="tight")
     if show:
         plt.show()
     else:
@@ -271,8 +252,7 @@ def plot_Sz_position_correlations(spectrum, spectrum_info, hamiltonian_kwargs, p
     plt.xlabel(r"rung distance $d$")
     plt.ylabel(r"$\sum_i\left<S^z_i S^z_{i+d}\right>$")
     plt.xlim(x[0], x[-1])
-    # folder,suffix = get_figure_name(hamiltonian_kwargs,spectrum_info)
-    # plt.savefig(f'{folder}Sz_position_correlations{suffix}.pdf', bbox_inches='tight')
+    plt.savefig(spectrum.get_figure_path(), bbox_inches="tight")
     if show:
         plt.show()
     else:
@@ -281,6 +261,7 @@ def plot_Sz_position_correlations(spectrum, spectrum_info, hamiltonian_kwargs, p
 
 def plot_singlet_correlations(spectrum, show=False):
     fixed_distances = spectrum.info["fixed_distances"]
+    plt.subplots()
     plt.title(rf"intra-singlet separations: $\alpha=${fixed_distances[0]}, $\beta=${fixed_distances[1]}")
     y = spectrum.ws[:, 1]
     markers = "sopD^"
@@ -303,8 +284,7 @@ def plot_singlet_correlations(spectrum, show=False):
     plt.ylim([1e-5, 1])
     plt.xlim([0, np.amax(spectrum.ws[:, 0])])
 
-    # folder,suffix = get_figure_name(hamiltonian_kwargs,spectrum_info)
-    # plt.savefig(f'{folder}singlet-singlet_correlations{suffix}.pdf', bbox_inches='tight')
+    plt.savefig(spectrum.get_figure_path(), bbox_inches="tight")
     if show:
         plt.show()
     else:
@@ -315,6 +295,7 @@ def plot_Sq_plus_range(spectrum, spectrum_info, hamiltonian_kwargs, eps_range, s
     aspect = 0.3
     ws = spectrum_info["ws"]
     extent = eps_range[0], eps_range[-1], np.nanmin(ws), np.nanmax(ws)
+    plt.subplots()
     plt.imshow(spectrum[:, :].T, aspect=aspect, origin="lower", cmap=cm.gnuplot, extent=extent)
     cbar = plt.colorbar()
     if "prime" in spectrum_info["name"]:
@@ -326,8 +307,7 @@ def plot_Sq_plus_range(spectrum, spectrum_info, hamiltonian_kwargs, eps_range, s
     plt.xlabel(r"$\epsilon^\prime$ [eV]")
     plt.ylabel(r"$\omega$ [eV]")
     cbar.set_label(rf"${s_label}^-_0 {s_label}^+_0$ [a. u.]")
-    # folder,suffix = get_hubbard_figure_name(hamiltonian_kwargs,spectrum_info)
-    # plt.savefig(f'{folder}S{prime}+range{[-0.3,0.2]}{suffix}.pdf', bbox_inches='tight')
+    plt.savefig(spectrum.get_figure_path(), bbox_inches="tight")
     if show:
         plt.show()
     else:
@@ -340,17 +320,17 @@ def plot_Sq_plus(ws, spectrum, spectrum_info, hamiltonian_kwargs, plot_info, sho
     ext_spectrum[-1, :, :] = spectrum[0, :, :]
     mkx = ext_spectrum.shape[
         0
-    ]  # --------------------------------------------------- these extents assume too much about input qs
+    ]  # TODO: these extents assume too much about input qs
     k_size = 0.5 / mkx
     extent = -k_size, 1 + k_size, np.nanmin(ws), np.nanmax(ws)
     aspect = 1.3
+    plt.subplots()
     if "prime" in spectrum_info["name"]:
         clabel = r"{d^\prime}"
         prime = "prime"
     else:
         clabel = "d"
         prime = ""
-    # folder,suffix = get_hubbard_figure_name(hamiltonian_kwargs,spectrum_info)
     clabel = r"$\chi_{+-}^" + clabel + "$ [a. u.]"
     for qy in range(spectrum.shape[1]):
         for qx in range(spectrum.shape[0]):
@@ -361,19 +341,20 @@ def plot_Sq_plus(ws, spectrum, spectrum_info, hamiltonian_kwargs, plot_info, sho
     plt.xlim([np.amin(ws), np.amax(ws)])
     plt.ylim([0, None])
     plt.legend()
-    # plt.savefig(f'{folder}S{prime}+qs{suffix}.pdf', bbox_inches='tight')
+    plt.savefig(spectrum.get_figure_path(operator_name_suffix=f"{prime}+qs"), bbox_inches="tight")
     if show:
         plt.show()
     else:
         plt.close()
     # for y in range(spectrum.shape[1]):
+    #     plt.figure()
     #     ys = ext_spectrum[:,y,:].T
     #     plt.imshow(ys,aspect=aspect,origin='lower',cmap=cm.gnuplot,extent=extent)
     #     cbar = plt.colorbar()
     #     plt.xlabel(r'$k_x \, [2\pi / a]$')
     #     plt.ylabel(r'$\omega$ [eV]')
     #     cbar.set_label(clabel)
-    #     plt.savefig(f'{folder}S{prime}+q_qy{y}_map{suffix}.pdf', bbox_inches='tight')
+    #     plt.savefig(spectrum.get_figure_path(operator_name_suffix=f"{prime}+q_qy{y}_map"), bbox_inches="tight")
     #     if show:
     #         plt.show()
     #     else:
@@ -385,7 +366,7 @@ def plot_Sq_plus(ws, spectrum, spectrum_info, hamiltonian_kwargs, plot_info, sho
     #     plt.ylim([0,np.nanmax(dos)])
     #     plt.xlabel(r'$\omega$ [eV]')
     #     plt.ylabel(r'DOS')
-    #     plt.savefig(f'{folder}S{prime}+q_qy{y}_dos{suffix}.pdf', bbox_inches='tight')
+    #     plt.savefig(spectrum.get_figure_path(operator_name_suffix=f"{prime}+q_qy{y}_dos"), bbox_inches="tight")
     #     if show:
     #         plt.show()
     #     else:

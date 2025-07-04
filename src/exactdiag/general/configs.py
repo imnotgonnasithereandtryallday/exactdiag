@@ -132,7 +132,7 @@ class Combined_Config_Base:
             self.spectrum.num_threads = self.hamiltonian.num_threads
 
     @classmethod
-    def load(cls, path: pathlib.Path) -> typing.Self:
+    def load(cls, path: pathlib.Path | str) -> typing.Self:
         """Load from a JSON file."""
         with open(path, mode="r", encoding="utf-8") as fp:
             d = json.load(fp)
