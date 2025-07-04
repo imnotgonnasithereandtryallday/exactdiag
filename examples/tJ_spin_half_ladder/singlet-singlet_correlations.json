@@ -19,6 +19,6 @@
     },
     "correlation": {
         "name": "singlet-singlet",
-        "fixed_distances": [[1,1], [1,1]]
+        "fixed_distances": [{"leg":1,"rung":1}, {"leg":1,"rung":1}]
     }
 }

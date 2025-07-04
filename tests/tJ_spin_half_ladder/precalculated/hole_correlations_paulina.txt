@@ -20,7 +20,7 @@
         },
         "correlation": {
             "name": "hole_correlations",
-            "fixed_distances": [[]]
+            "fixed_distances": []
         },
         "probabilities": [1, 0.144, 0.030, 0.149, 0.025, 0.114, 0.019, 0.092]
     },
@@ -45,7 +45,7 @@
         },
         "correlation": {
             "name": "hole_correlations",
-            "fixed_distances": [[]]
+            "fixed_distances": []
         },
         "probabilities": [1, 0.026, 0.032, 0.040, 0.076, 0.055, 0.114, 0.072, 0.123, 0.073]
     },
@@ -70,7 +70,7 @@
         },
         "correlation": {
             "name": "hole_correlations",
-            "fixed_distances": [[]]
+            "fixed_distances": []
         },
         "probabilities": [1, 0.127, 0.037, 0.129, 0.041, 0.084, 0.045, 0.057, 0.043, 0.045]
     },
@@ -95,7 +95,7 @@
         },
         "correlation": {
             "name": "hole_correlations",
-            "fixed_distances": [[]]
+            "fixed_distances": []
         },
         "probabilities": [1, 0.179, 0.043, 0.164, 0.033, 0.082, 0.027, 0.039, 0.022, 0.024]
     },
@@ -120,7 +120,7 @@
         },
         "correlation": {
             "name": "hole_correlations",
-            "fixed_distances": [[]]
+            "fixed_distances": []
         },
         "probabilities": [1, 0.072, 0.028, 0.081, 0.046, 0.072, 0.059, 0.063, 0.061, 0.053]
     },
@@ -145,7 +145,7 @@
         },
         "correlation": {
             "name": "hole_correlations",
-            "fixed_distances": [[]]
+            "fixed_distances": []
         },
         "probabilities": [1, 0.105, 0.032, 0.112, 0.038, 0.083, 0.038, 0.059, 0.026, 0.034, 0.023, 0.027]
     },
@@ -170,7 +170,7 @@
         },
         "correlation": {
             "name": "hole_correlations",
-            "fixed_distances": [[]]
+            "fixed_distances": []
         },
         "probabilities": [1, 0.105, 0.033, 0.113, 0.041, 0.085, 0.038, 0.058, 0.022, 0.030, 0.012, 0.016]
     },
@@ -195,7 +195,7 @@
         },
         "correlation": {
             "name": "hole_correlations",
-            "fixed_distances": [[]]
+            "fixed_distances": []
         },
         "probabilities": [1, 0.084, 0.027, 0.091, 0.036, 0.072, 0.040, 0.055, 0.032, 0.034, 0.026, 0.022, 0.024, 0.019]
     }

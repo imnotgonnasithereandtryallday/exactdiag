@@ -19,6 +19,6 @@
     },
     "correlation": {
         "name": "hole_correlations",
-        "fixed_distances": [[]]
+        "fixed_distances": []
     }
 }

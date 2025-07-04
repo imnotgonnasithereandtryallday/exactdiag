@@ -157,7 +157,7 @@ class Spectrum_Config(gc.Spectrum_Config_Base):
 class Position_Correlation_Config(gc.Spectrum_Config_Base):
     # FIXME: add docstring
     name: str
-    fixed_distances: tuple[tuple[int, ...], ...]  # TODO: make it a list of dicts with rung, leg keys
+    fixed_distances: list[Quantum_Numbers]
 
 
 @dataclass
@@ -256,6 +256,6 @@ def _get_position_correlation_figure_suffix(
 ):
     weight_string = "_".join([f"{name}{weight}" for name, weight in asdict(hamiltonian_config.weights).items()])
     operator_name_suffix = f"_{operator_name_suffix}" if operator_name_suffix else ""
-    fixed_string = f"{correlation_config.fixed_distances}"
+    fixed_string = f"{[shift.to_npint32().tolist() for shift in correlation_config.fixed_distances]}"
     suffix = f"{operator_name_suffix}_fixed{fixed_string}_{weight_string}"
     return suffix

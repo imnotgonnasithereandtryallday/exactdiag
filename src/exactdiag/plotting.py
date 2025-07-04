@@ -206,7 +206,6 @@ def plot_all_spectral_functions(spectrum, show=False, **kwargs):
 
 
 def plot_hole_correlations(spectrum, show=False, periodc=(True, False)):
-    fixed = spectrum.info["fixed_distances"]
     correlations = spectrum.spectrum / np.amax(spectrum.spectrum)
     x = spectrum.ws[:, 0]
     y = spectrum.ws[:, 1]
@@ -214,7 +213,8 @@ def plot_hole_correlations(spectrum, show=False, periodc=(True, False)):
     y_len = np.amax(y) + 1
     x_shift = x_len // 2
     y_shift = (y_len - 1) // 2
-    fixed = []  # [[(x + x_shift) % x_len, (y + y_shift) % y_len] for x, y in fixed]  # FIXME: What was this supposed to do?
+    fixed = [[0,0]] + [shift.to_npint32() for shift in spectrum.info["fixed_distances"]]
+    fixed = [[(x + x_shift) % x_len, (y + y_shift) % y_len] for (x, y) in fixed]
     x = (x + x_shift) % x_len
     y = (y + y_shift) % y_len
     label_shift = (-1 + 2 * y) * 0.32
@@ -233,7 +233,7 @@ def plot_hole_correlations(spectrum, show=False, periodc=(True, False)):
     for xv, yv, vv, sv in zip(x, y, correlations, label_shift):
         if [xv, yv] not in fixed:
             plt.text(xv - 0.2, yv + sv, "%.3f" % vv)
-    # plt.scatter(*zip(*fixed), s=1e-2 * fac2, edgecolors="r", facecolors="none")
+    plt.scatter(*zip(*fixed), s=1e-2 * fac2, edgecolors="r", facecolors="none")
     plt.ylim(-0.5, 1.5)
     plt.axis("off")
     fig.set_dpi(100)

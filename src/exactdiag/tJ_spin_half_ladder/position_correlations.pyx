@@ -29,7 +29,10 @@ def get_hole_spin_projection_correlations(config: configs.Combined_Position_Conf
     def calculate():
         state_translator, basis_map, symmetries = config.hamiltonian.get_translators()
         eigvals, eigvecs = get_lowest_eigenpairs(config)
-        fixed_distances = np.array(config.correlation.fixed_distances, dtype=np.int32)
+        if not config.correlation.fixed_distances:
+            fixed_distances = np.empty([0,len(config.hamiltonian.periodicities)], dtype=np.int32)
+        else:
+            fixed_distances = np.array([shift.to_npint32() for shift in config.correlation.fixed_distances], dtype=np.int32)
         spin_or_hole = config.correlation.name == "Sz_correlations"
         num_degenerate_states = 0
         for j in range(len(eigvals)):
@@ -53,12 +56,12 @@ def get_singlet_singlet_correlations(config: configs.Combined_Position_Config):
         state_translator, basis_map, py_symmetries = config.hamiltonian.get_translators()
         eigvals, eigvecs = get_lowest_eigenpairs(config)
         num_nodes = config.hamiltonian.num_nodes
-        fixed_distances = np.array(config.correlation.fixed_distances, dtype=np.int32)
+        fixed_distances = np.array([shift.to_npint32() for shift in config.correlation.fixed_distances], dtype=np.int32)
         num_degenerate_states = 0
         get_operaor = lambda fixed_distances: get_position_correlation_operator(config, fixed_distances)[0]()
         for j in range(len(eigvals)):
             # average over degenerate ground states
-            if (abs(eigvals[0]-eigvals[j]) > 1e-6):
+            if (abs(eigvals[0]-eigvals[j]) > 1e-6):  # TODO: set a single threshold for all functions.
                 break
             num_degenerate_states += 1
             gs = eigvecs[:,j]
@@ -73,7 +76,7 @@ def get_singlet_singlet_correlations(config: configs.Combined_Position_Config):
     return varied_shifts, spectrum
 
 def calculate_hole_spin_projection_correlations(Py_State_Translator py_state_translator, Py_Basis_Index_Map basis_map, VALUE_TYPE_t[:] eigvec, \
-                                                bool spin_or_hole, int[:,:] fixed_distances=np.empty([0,0], dtype=np.int32)):
+                                                bool spin_or_hole, int[:,:] fixed_distances):
     # for hole correlations spin_or_hole is False
     # for a 2-hole/Sz correlation, fixed_distances is empty
     # for a 3-hole/Sz correlation, fixed_distances = [x], where x is the shift between the two fixed holes
@@ -81,7 +84,7 @@ def calculate_hole_spin_projection_correlations(Py_State_Translator py_state_tra
     # TODO: Can we unify with calculate_singlet_singlet_correlations?
     cdef pos_int distance, num_nodes = py_state_translator.get_symmetries().get_basis_length()
     cdef int i, dist_ind
-    cdef int num_fixed = fixed_distances.shape[0] if fixed_distances.shape[1] > 0 else 0
+    cdef int num_fixed = fixed_distances.shape[0]
     position_combinations = np.empty((num_nodes,num_nodes,2+num_fixed),dtype=np_pos_int)
     cdef int[:,:] varied_shifts = np.empty([num_nodes,py_state_translator.get_symmetries().get_num_shifts()], dtype=np.int32)
     

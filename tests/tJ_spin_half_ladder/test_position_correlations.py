@@ -11,7 +11,7 @@ def test_hole_correlations_against_precalculated_paulina():
     """Calculated 2-hole correlations should match values in Paulina's dissertation."""
     # NOTE: Paulina has the values for 9 rungs and 2 holes wrong: the probabilities do not even add up to 1.
     folder = pathlib.Path(__file__).parent / "precalculated"
-    diffs = _get_correlation_diffs(folder / "hole_correlations_paulina.txt", normalize=False)
+    diffs = _get_correlation_diffs(folder / "hole_correlations_paulina.txt", normalize=True)
     listed_precision = 1e-3
     assert all([np.all(np.abs(diff) < listed_precision) for diff in diffs])
 
