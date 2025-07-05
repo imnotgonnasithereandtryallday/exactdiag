@@ -2,7 +2,6 @@ import logging
 
 import matplotlib
 from matplotlib import cm
-from matplotlib.patches import Ellipse
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -51,7 +50,7 @@ def plot_Szq(spectrum, show: bool = False):  # todo type spectrum
         _logger.warning("Plots for hamiltonian symmetry_qs != (0,0) are probably incorrect.")
     last_axis = tuple([0] * (len(spectrum.ws.shape) - 1) + [slice(None)])
     if np.any(spectrum.ws[last_axis] != spectrum.ws):
-        # -------- could be solved with plt.contourf instead of imshow?
+        # TODO: could be solved with plt.contourf instead of imshow?
         raise ValueError(spectrum.ws)
     ws = spectrum.ws[last_axis]
     ext_spectrum = np.empty(np.array(spectrum.spectrum.shape) + [1, 0, 0])

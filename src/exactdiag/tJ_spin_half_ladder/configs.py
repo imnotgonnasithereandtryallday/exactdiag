@@ -14,7 +14,6 @@ from exactdiag.general.matrix_rules_utils import set_combinatorics
 import exactdiag.general.configs as gc
 from exactdiag.general.configs import Eigenpair_Config  # noqa: F401 - Reexporting for convenience.
 from exactdiag.general.types_and_constants import MATRIX_INDEX_TYPE, VALUE_INDEX_TYPE
-from exactdiag.general.sparse_matrices import Sparse_Matrix
 from exactdiag.tJ_spin_half_ladder import matrix_setup
 
 _logger = logging.getLogger(__name__)
@@ -155,9 +154,18 @@ class Spectrum_Config(gc.Spectrum_Config_Base):
 
 @dataclass(config={"validate_assignment": True, "extra": "forbid"})
 class Position_Correlation_Config(gc.Spectrum_Config_Base):
-    # FIXME: add docstring
-    name: str
-    fixed_distances: list[Quantum_Numbers]
+    r"""Information necessary, in addition to a Hamiltonian_Config instance, to calculate an operator spectrum.
+
+    fixed_distances: fixed relative shifts between operator terms.
+        For hole- and Sz-correlations, there are len(fixed_distances)+1 number operators.
+        Their poistions relative to the first one are defined by fixed_distances.
+        For singlet-singlet correlations, fixed_distances defines the structure of the two singlet operators;
+        all relative positions of the singlet operators are computed.
+    num_threads: Setting to None indicates to copy the attribute from hamiltonian config when put into Config.
+    """
+
+    name: str  # TODO: to enum
+    fixed_distances: list[Quantum_Numbers]  # TODO: Should be shifts between positions, not necessarily symmetry-related
 
 
 @dataclass
