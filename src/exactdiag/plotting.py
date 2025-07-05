@@ -245,9 +245,9 @@ def plot_hole_correlations(spectrum, show=False, periodc=(True, False)):
         plt.close()
 
 
-def plot_Sz_position_correlations(spectrum, spectrum_info, hamiltonian_kwargs, plot_info, show=False, **kwargs):
-    x = [0.5 * i for i in range(len(spectrum))]
-    plt.plot(x, spectrum, marker="s")
+def plot_Sz_position_correlations(spectrum, show=False):
+    x = [0.5 * i for i in range(len(spectrum.spectrum))]
+    plt.plot(x, spectrum.spectrum, marker="s")
 
     plt.xlabel(r"rung distance $d$")
     plt.ylabel(r"$\sum_i\left<S^z_i S^z_{i+d}\right>$")

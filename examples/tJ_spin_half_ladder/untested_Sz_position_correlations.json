@@ -1,0 +1,24 @@
+{
+    "hamiltonian": {
+        "num_rungs": 8,
+        "num_holes": 2,
+        "weights": {
+            "tl": 0.45,
+            "tr": 0.36,
+            "jl": 0.15,
+            "jr": 0.12
+        },
+        "symmetry_qs": {
+            "leg": 4,
+            "rung": 0
+        },
+        "num_threads": 8
+    },
+    "eigenpair": {
+        "num_eigenpairs": 5
+    },
+    "correlation": {
+        "name": "Sz_correlations",
+        "fixed_distances": []
+    }
+}
