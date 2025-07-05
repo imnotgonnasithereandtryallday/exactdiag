@@ -17,7 +17,7 @@
     "eigenpair": {
         "num_eigenpairs": 5
     },
-    "correlation": {
+    "spectrum": {
         "name": "singlet-singlet",
         "fixed_distances": [{"leg":1,"rung":1}, {"leg":1,"rung":1}]
     }

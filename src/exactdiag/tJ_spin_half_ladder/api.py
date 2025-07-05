@@ -102,14 +102,14 @@ def get_excitation_spectrum(config: Config, limited_qs: bool = True) -> Spectrum
 
 
 def get_position_correlations(config: Combined_Position_Config):
-    base_name = config.correlation.name
+    base_name = config.spectrum.name
     if base_name in {"hole_correlations", "Sz_correlations"}:
         ws, spectrum = position_correlations.get_hole_spin_projection_correlations(config)
 
     elif base_name == "singlet-singlet":
         ws, spectrum = position_correlations.get_singlet_singlet_correlations(config)
 
-    info = {"fixed_distances": config.correlation.fixed_distances}
+    info = {"fixed_distances": config.spectrum.fixed_distances}
     return Spectrum(ws, spectrum, config, info)
 
 
@@ -207,4 +207,4 @@ def plot_excitation_spectrum(config: Config, show: bool = False, **kwargs) -> No
 
 def plot_position_correlation(config: Combined_Position_Config, show: bool = False) -> None:
     spectrum = get_position_correlations(config=config)
-    choose_plot(name=config.correlation.name, spectrum=spectrum, show=show)
+    choose_plot(name=config.spectrum.name, spectrum=spectrum, show=show)

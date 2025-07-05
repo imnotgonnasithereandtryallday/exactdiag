@@ -189,22 +189,16 @@ class Config(gc.Combined_Config_Base):  # noqa: D101 - docstring inherited.
 @dataclass
 class Combined_Position_Config(gc.Combined_Config_Base):  # noqa: D101 - docstring inherited.
     hamiltonian: Hamiltonian_Config
-    correlation: Position_Correlation_Config | None = None
-    # FIXME: What is the best workflow here?
-
-    def __post_init__(self):  # FIXME: the attribute should still be called spectrum probably?
-        super().__post_init__()
-        if self.correlation is not None and self.correlation.num_threads is None:
-            self.correlation.num_threads = self.hamiltonian.num_threads
+    spectrum: Position_Correlation_Config
 
     @override
     def get_spectrum_path(self, operator_name_suffix: str = ""):  # noqa: D102 - docstring inherited.
-        if self.correlation is None:
+        if self.spectrum is None:
             raise ValueError("Position_Correlation_Config is required.")
         system_folder = self.hamiltonian.get_calc_folder()
-        folder = system_folder / f"{self.correlation.name}_spectra"
-        suffix = _get_position_correlation_figure_suffix(self.hamiltonian, self.correlation, operator_name_suffix)
-        path = folder / f"{self.correlation.name}{suffix}.npz"
+        folder = system_folder / f"{self.spectrum.name}_spectra"
+        suffix = _get_position_correlation_figure_suffix(self.hamiltonian, self.spectrum, operator_name_suffix)
+        path = folder / f"{self.spectrum.name}{suffix}.npz"
         return path
 
     @override
@@ -212,13 +206,20 @@ class Combined_Position_Config(gc.Combined_Config_Base):  # noqa: D101 - docstri
         # TODO: fill in
         pass
 
+
 def _parse_hamiltonian_kwargs_intro_message(config: Hamiltonian_Config) -> str:
-    first_line = f"{config.num_rungs} rungs, {config.num_holes} holes, k={config.symmetry_qs}, Sz={config.total_spin_projection}/2"
+    first_line = (
+        f"{config.num_rungs} rungs, {config.num_holes} holes"
+        f", k={config.symmetry_qs}, Sz={config.total_spin_projection}/2"
+    )
     spin_projection_states = config.combinatorics_table[config.num_down_spins, config.num_nodes - config.num_holes]
     hole_states = config.combinatorics_table[config.num_holes, config.num_nodes]
     total_projection_states = spin_projection_states * hole_states
     momentum_states_approx = total_projection_states // config.num_nodes
-    second_line = f"number of states satisfying spin projection = {total_projection_states}, number of states further satifying momentum ~ {momentum_states_approx}"
+    second_line = (
+        f"number of states satisfying spin projection = {total_projection_states}"
+        f", number of states further satifying momentum ~ {momentum_states_approx}"
+    )
     momentum_states_per_Gb = momentum_states_approx / 1e9  # noqa: N806
     eigenvectors_size = 2 * 64 * momentum_states_per_Gb / 8
     elements_in_column = 3 * config.num_nodes
@@ -228,7 +229,10 @@ def _parse_hamiltonian_kwargs_intro_message(config: Hamiltonian_Config) -> str:
         (elements_in_column + 1) * index_element_size + elements_in_column * value_element_size
     ) * momentum_states_per_Gb
     basis_size = momentum_states_per_Gb * (index_element_size + 4)
-    third_line = f"single eigenvector size: {eigenvectors_size:.2f} GB, full Hamiltonian size < {hamiltonian_size:.2f} GB, basis size: {basis_size:.2f} GB"
+    third_line = (
+        f"single eigenvector size: {eigenvectors_size:.2f} GB"
+        f", full Hamiltonian size < {hamiltonian_size:.2f} GB, basis size: {basis_size:.2f} GB"
+    )
     full_string = f"{first_line}\n{second_line}" + (
         f"\n{third_line}" if np.amax([hamiltonian_size, eigenvectors_size, basis_size]) > 1 else ""
     )

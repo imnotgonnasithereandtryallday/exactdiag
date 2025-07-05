@@ -18,7 +18,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":1,"rung":1}, {"leg":1,"rung":1}]
         },
@@ -45,7 +45,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":1,"rung":1}, {"leg":1,"rung":1}]
         },
@@ -74,7 +74,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":1,"rung":1}, {"leg":1,"rung":1}]
         },
@@ -103,7 +103,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":1,"rung":0}, {"leg":1,"rung":1}]
         },
@@ -133,7 +133,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":1,"rung":0}, {"leg":1,"rung":1}]
         },
@@ -162,7 +162,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":1,"rung":0}, {"leg":1,"rung":1}]
         },
@@ -191,7 +191,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":1,"rung":0}, {"leg":1,"rung":0}]
         },
@@ -220,7 +220,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":1,"rung":0}, {"leg":1,"rung":0}]
         },
@@ -249,7 +249,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":1,"rung":0}, {"leg":1,"rung":0}]
         },
@@ -279,7 +279,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":1,"rung":1}, {"leg":0,"rung":1}]
         },
@@ -307,7 +307,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":1,"rung":1}, {"leg":0,"rung":1}]
         },
@@ -336,7 +336,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":1,"rung":1}, {"leg":0,"rung":1}]
         },
@@ -365,7 +365,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":0,"rung":1}, {"leg":1,"rung":0}]
         },
@@ -394,7 +394,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":0,"rung":1}, {"leg":1,"rung":0}]
         },
@@ -423,7 +423,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":0,"rung":1}, {"leg":1,"rung":0}]
         },
@@ -451,7 +451,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":0,"rung":1}, {"leg":0,"rung":1}]
         },
@@ -479,7 +479,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":0,"rung":1}, {"leg":0,"rung":1}]
         },
@@ -508,7 +508,7 @@
         "eigenpair": {
             "num_eigenpairs": 5
         },
-        "correlation": {
+        "spectrum": {
             "name": "singlet-singlet",
             "fixed_distances": [{"leg":0,"rung":1}, {"leg":0,"rung":1}]
         },

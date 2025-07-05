@@ -434,8 +434,8 @@ def get_position_correlation_operator(config: "configs.Combined_Position_Config"
     cdef vector[vector[VALUE_TYPE_t]] combination_weights
 
 
-    if config.correlation.name != 'singlet-singlet': 
-        raise ValueError(f"Unsupported operator {config.correlation.name}")
+    if config.spectrum.name != 'singlet-singlet':
+        raise ValueError(f"Unsupported operator {config.spectrum.name}")
 
     # singlet-singlet: \Delta_i^\dagger (y)  \Delta_j (x)
     # \Delta_i (x) = 1/sqrt(2) * (c_{i \uparrow} c_{i+x \downarrow} - c_{i \downarrow} c_{i+x \uparrow})
@@ -487,7 +487,7 @@ def get_position_correlation_operator(config: "configs.Combined_Position_Config"
     symmetry_strings = ['sorted']  
     shape = [initial_basis_map.get().get_num_states(), initial_basis_map.get().get_num_states()]
     shift_string = f'_shifts{fixed_distances.tolist()}'
-    full_name = f'{config.correlation.name}{shift_string}'         
+    full_name = f'{config.spectrum.name}{shift_string}'
     signature = Signature(
         matrix_name=full_name,
         shape=shape,
@@ -504,8 +504,8 @@ def get_position_correlation_operator(config: "configs.Combined_Position_Config"
         'max_values_per_column': max_num_values_per_column,
         'shape': shape,
         'signature': signature,
-        'num_threads': config.correlation.num_threads,
+        'num_threads': config.spectrum.num_threads,
     }
     get_operator = partial(get_sparse_matrix, **operator_kwargs)
-    _logger.debug(f"Finished setting up operator {config.correlation.name} with {config}.")
+    _logger.debug(f"Finished setting up operator {config.spectrum.name} with {config}.")
     return get_operator, final_config.hamiltonian, get_excited_H

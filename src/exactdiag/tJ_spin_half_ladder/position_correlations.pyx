@@ -29,11 +29,11 @@ def get_hole_spin_projection_correlations(config: configs.Combined_Position_Conf
     def calculate():
         state_translator, basis_map, symmetries = config.hamiltonian.get_translators()
         eigvals, eigvecs = get_lowest_eigenpairs(config)
-        if not config.correlation.fixed_distances:
+        if not config.spectrum.fixed_distances:
             fixed_distances = np.empty([0,len(config.hamiltonian.periodicities)], dtype=np.int32)
         else:
-            fixed_distances = np.array([shift.to_npint32() for shift in config.correlation.fixed_distances], dtype=np.int32)
-        spin_or_hole = config.correlation.name == "Sz_correlations"
+            fixed_distances = np.array([shift.to_npint32() for shift in config.spectrum.fixed_distances], dtype=np.int32)
+        spin_or_hole = config.spectrum.name == "Sz_correlations"
         num_degenerate_states = 0
         for j in range(len(eigvals)):
             # average over degenerate ground states
@@ -56,7 +56,7 @@ def get_singlet_singlet_correlations(config: configs.Combined_Position_Config):
         state_translator, basis_map, py_symmetries = config.hamiltonian.get_translators()
         eigvals, eigvecs = get_lowest_eigenpairs(config)
         num_nodes = config.hamiltonian.num_nodes
-        fixed_distances = np.array([shift.to_npint32() for shift in config.correlation.fixed_distances], dtype=np.int32)
+        fixed_distances = np.array([shift.to_npint32() for shift in config.spectrum.fixed_distances], dtype=np.int32)
         num_degenerate_states = 0
         get_operaor = lambda fixed_distances: get_position_correlation_operator(config, fixed_distances)[0]()
         for j in range(len(eigvals)):
