@@ -26,7 +26,7 @@ def run_example(config_file: pathlib.Path | str = None):
     #       We do not need the whole Hamiltonian in RAM at any point,
     #       but swapping matrices in RAM during diagonalization makes it very slow.
     # ruff: noqa: N816
-    config_Nless2 = api.Config.load(config_file)
+    config_Nless2 = api.Full_Spectrum_Config.load(config_file)
     config_N = copy.deepcopy(config_Nless2)
     config_N.hamiltonian.num_holes = config_Nless2.hamiltonian.num_holes - 2
     config_Nless2.spectrum.name = "spectral_function_plus"

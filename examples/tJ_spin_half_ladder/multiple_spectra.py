@@ -10,7 +10,7 @@ from exactdiag.tJ_spin_half_ladder import api
 def run_example(config_file: pathlib.Path | str = None):
     if config_file is None:
         config_file = pathlib.Path(__file__).with_suffix(".json")
-    config = api.Config.load(config_file)
+    config = api.Full_Spectrum_Config.load(config_file)
 
     omega_mins = {
         "current_rung": 0,  # Note: this may not plot what you would expect and logs a warning.

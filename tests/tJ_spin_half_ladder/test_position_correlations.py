@@ -33,7 +33,7 @@ def _get_correlation_diffs(path: pathlib.Path, normalize: bool) -> list[np.ndarr
     diffs = []
     for d in precalc:
         target = d.pop("probabilities")
-        config = lc.Combined_Position_Config(**d)
+        config = lc.Full_Position_Correlation_Config(**d)
         spectrum = api.get_position_correlations(config)
         probabilities = spectrum.spectrum.flatten()
         if normalize:

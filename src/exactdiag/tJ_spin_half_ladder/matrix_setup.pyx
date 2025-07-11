@@ -192,7 +192,7 @@ def _get_tJ_lambda_kwargs(
     return matrix_kwargs
 
 
-def setup_excitation_operator(initial_config: "config.Config", fixed_distances=None): 
+def setup_excitation_operator(initial_config: "config.Limited_Spectrum_Config"): 
     """Return a callable that returns the operator, 
     info about the final symmetry block and the Hamiltonian of the final block.
     
@@ -351,8 +351,7 @@ def setup_excitation_operator(initial_config: "config.Config", fixed_distances=N
     symmetry_strings = ['sorted']  
     shape = [final_basis_map.get().get_num_states(), initial_basis_map.get().get_num_states()]
     q_string = f'_{operator_symmetry_qs.to_npint32()}' if operator_symmetry_qs is not None else ''
-    shift_string = f'_shifts{[[i for i in shift] for shift in fixed_distances]}' if fixed_distances is not None else '' 
-    full_name = f'{name}{q_string}{shift_string}'         
+    full_name = f'{name}{q_string}'         
     signature = Signature(
         matrix_name=full_name,
         shape=shape,
@@ -408,8 +407,7 @@ def py_get_ladder_translators(config: "config.Hamiltonian_Config"
     return py_trans, py_basis, py_sym
 
 
-def get_position_correlation_operator(config: "configs.Combined_Position_Config", fixed_distances):
-        # TODO: Typing: for singlet-singlet, fixed_distances is a list of 3 shifts (leg, rung).
+def get_position_correlation_operator(config: "configs.Limited_Position_Correlation_Config", free_shift: "configs.Position_Shift"):
     num_rungs = config.hamiltonian.num_rungs
     num_holes = config.hamiltonian.num_holes 
     cdef pos_int num_nodes = config.hamiltonian.num_nodes
@@ -434,12 +432,12 @@ def get_position_correlation_operator(config: "configs.Combined_Position_Config"
     cdef vector[vector[VALUE_TYPE_t]] combination_weights
 
 
-    if config.spectrum.name != 'singlet-singlet':
-        raise ValueError(f"Unsupported operator {config.spectrum.name}")
+    if config.correlations.name != 'singlet-singlet':
+        raise ValueError(f"Unsupported operator {config.correlations.name}")
 
     # singlet-singlet: \Delta_i^\dagger (y)  \Delta_j (x)
     # \Delta_i (x) = 1/sqrt(2) * (c_{i \uparrow} c_{i+x \downarrow} - c_{i \downarrow} c_{i+x \uparrow})
-    fixed_distances = np.array(fixed_distances)
+    fixed_distances = np.array([shift.to_npint32() for shift in config.correlations.fixed_distances] + [free_shift.to_npint32()], dtype=np.int32)
     # fixed_distances = separation in [creation singlet, annihilation singlet, between singlets]
     #                   given by shifts [rung, leg]
     #                = shifts corresponding to  [y, x, j-i]
@@ -487,7 +485,7 @@ def get_position_correlation_operator(config: "configs.Combined_Position_Config"
     symmetry_strings = ['sorted']  
     shape = [initial_basis_map.get().get_num_states(), initial_basis_map.get().get_num_states()]
     shift_string = f'_shifts{fixed_distances.tolist()}'
-    full_name = f'{config.spectrum.name}{shift_string}'
+    full_name = f'{config.correlations.name}{shift_string}'
     signature = Signature(
         matrix_name=full_name,
         shape=shape,
@@ -504,8 +502,8 @@ def get_position_correlation_operator(config: "configs.Combined_Position_Config"
         'max_values_per_column': max_num_values_per_column,
         'shape': shape,
         'signature': signature,
-        'num_threads': config.spectrum.num_threads,
+        'num_threads': config.correlations.num_threads,
     }
     get_operator = partial(get_sparse_matrix, **operator_kwargs)
-    _logger.debug(f"Finished setting up operator {config.spectrum.name} with {config}.")
+    _logger.debug(f"Finished setting up operator {config.correlations.name} with {config}.")
     return get_operator, final_config.hamiltonian, get_excited_H

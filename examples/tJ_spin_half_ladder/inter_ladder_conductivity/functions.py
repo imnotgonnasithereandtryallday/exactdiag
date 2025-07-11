@@ -8,7 +8,7 @@ from exactdiag.tJ_spin_half_ladder import api
 from exactdiag.tJ_spin_half_ladder import configs
 
 
-def get_conductivity_contributions(config: configs.Config):
+def get_conductivity_contributions(config: configs.Full_Spectrum_Config):
     """Return inter-ladder conductivity terms.
 
     Calculated from convolution of single-ladder spectral functions.
@@ -59,7 +59,7 @@ def get_conductivity_contributions(config: configs.Config):
     return ws, sigma_2357, hopping_amplitudes
 
 
-def _get_spectral_functions(config: configs.Config):
+def _get_spectral_functions(config: configs.Full_Spectrum_Config):
     if config.hamiltonian.num_holes == 0:
         # We assume the presence of both creation and annihilation spectral functions.
         raise ValueError("The number of holes must be nonzero.")

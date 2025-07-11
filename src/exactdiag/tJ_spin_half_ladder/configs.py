@@ -3,23 +3,23 @@ an anisotropic spin-1/2 nearest-neighbour t-J Hamiltonian on a ladder lattice.
 """  # noqa: D205
 
 from dataclasses import asdict
+import enum
+import logging
 import pathlib
 from typing import Literal, override
-import logging
 
 import numpy as np
 from pydantic.dataclasses import dataclass, Field
 
 from exactdiag.general.matrix_rules_utils import set_combinatorics
 import exactdiag.general.configs as gc
-from exactdiag.general.configs import Eigenpair_Config  # noqa: F401 - Reexporting for convenience.
 from exactdiag.general.types_and_constants import MATRIX_INDEX_TYPE, VALUE_INDEX_TYPE
 from exactdiag.tJ_spin_half_ladder import matrix_setup
 
 _logger = logging.getLogger(__name__)
 
 
-@dataclass(config={"validate_assignment": True, "extra": "forbid"})
+@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
 class Weights(gc.Weights_Base):
     """Weights of the Hamiltonian terms."""
 
@@ -29,19 +29,18 @@ class Weights(gc.Weights_Base):
     jr: float
 
 
-@dataclass(config={"validate_assignment": True, "extra": "forbid"})
+@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
 class Quantum_Numbers(gc.Quantum_Numbers_Base):  # noqa: D101 docstring inherited
     leg: int
     rung: Literal[0, 1]
 
 
-@dataclass(config={"arbitrary_types_allowed": True, "validate_assignment": True, "extra": "forbid"})
-class Hamiltonian_Config(gc.Hamiltonian_Config_Base):
+@dataclass(kw_only=True, config={"arbitrary_types_allowed": True, "validate_assignment": True, "extra": "forbid"})
+class Hamiltonian_Config(gc.Hamiltonian_Config_Base[Quantum_Numbers]):
     r"""Information necessary to construct a Hamiltonian.
 
     symmetry_qs: [conserved quasi-momentum along the leg, mirror symmetry parity] of the Hamiltonian block or None.
         The momentum is in the units of $2\pi/a$, parity is 0 for even, 1 for odd.
-        If None, indicates that momenta in range(num_rungs//2) and both parities should be considered.
     total_spin_projection: value of the conserved spin of the Hamiltonian block
         calculated as a difference of the numbers of up and down spins, i.e $sum_i 2S^z_i$.
 
@@ -54,7 +53,6 @@ class Hamiltonian_Config(gc.Hamiltonian_Config_Base):
     num_rungs: int
     num_holes: int
     weights: Weights
-    symmetry_qs: Quantum_Numbers | None = None
     total_spin_projection: int = None  # noqa # TODO: How to specify that the value is filled in if not given but the initialized object always has it?
     combinatorics_table: np.ndarray = Field(init=False)
 
@@ -107,17 +105,17 @@ class Hamiltonian_Config(gc.Hamiltonian_Config_Base):
         return folder
 
     @override
-    def get_translators(self):  # noqa: D102 docstring inherited
+    def get_translators(self):
         # TODO: Make the typing visible to python.
         # NOTE: This is here as a first step to decouple matrix_setup from cluster info.
         return matrix_setup.py_get_ladder_translators(self)
 
     @override
-    def setup(self):  # noqa: D102 docstring inherited
+    def setup(self):
         return matrix_setup.setup_hamiltonian(self)
 
     @override
-    def get_symmetry_info(self):  # noqa: D102 docstring inherited
+    def get_symmetry_info(self):
         symmetry_qs = None if self.symmetry_qs is None else [int(i) for i in self.symmetry_qs.to_npint32()]
         dic = {
             "num_rungs": self.num_rungs,
@@ -129,90 +127,108 @@ class Hamiltonian_Config(gc.Hamiltonian_Config_Base):
         return dic
 
 
-@dataclass(config={"validate_assignment": True, "extra": "forbid"})
-class Spectrum_Config(gc.Spectrum_Config_Base):
-    r"""Information necessary, in addition to a Hamiltonian_Config instance, to calculate an operator spectrum.
-
-    operator_symmetry_qs: [conserved quasi-momentum along the leg, mirror symmetry parity] of the operator block or None.
-        The momentum is in the units of $2\pi/a$, parity is 0 for even, 1 for odd.
-        If None, indicates that momenta in range(num_rungs//2) and both parities should be considered.
-    num_threads: Setting to None indicates to copy the attribute from hamiltonian config when put into Config.
-    """
-
-    # TODO: There must be a better way to copy the num_threads.
-    name: str  # TODO: to enum
-    omega_max: float
-    operator_symmetry_qs: Quantum_Numbers | None
-    broadening: float
-    omega_min: float = 0
-    omega_steps: int = 1000
-    num_lanczos_vecs: int = 250
-
-    def get_omegas(self):
-        return np.linspace(self.omega_min, self.omega_max, self.omega_steps)
+type Eigenpair_Config = gc.Eigenpair_Config[Hamiltonian_Config]
+type Spectrum_Part = gc.Spectrum_Part[Spectrum_Name, Quantum_Numbers]
 
 
-@dataclass(config={"validate_assignment": True, "extra": "forbid"})
-class Position_Correlation_Config(gc.Spectrum_Config_Base):
-    r"""Information necessary, in addition to a Hamiltonian_Config instance, to calculate an operator spectrum.
+class Spectrum_Name(enum.StrEnum):
+    """Names of the available operators."""
 
-    fixed_distances: fixed relative shifts between operator terms.
-        For hole- and Sz-correlations, there are len(fixed_distances)+1 number operators.
-        Their poistions relative to the first one are defined by fixed_distances.
-        For singlet-singlet correlations, fixed_distances defines the structure of the two singlet operators;
-        all relative positions of the singlet operators are computed.
-    num_threads: Setting to None indicates to copy the attribute from hamiltonian config when put into Config.
-    """
-
-    name: str  # TODO: to enum
-    fixed_distances: list[Quantum_Numbers]  # TODO: Should be shifts between positions, not necessarily symmetry-related
+    CURRENT_RUNG = enum.auto()
+    CURRENT_LEG = enum.auto()
+    SZQ = "Szq"
+    SPECTRAL_FUNCTION = enum.auto()
+    OFFIDAG_SPEC_FUNC = "offdiagonal_spectral_function"
 
 
-@dataclass
-class Config(gc.Combined_Config_Base):  # noqa: D101 - docstring inherited.
-    hamiltonian: Hamiltonian_Config
-    spectrum: Spectrum_Config | None = None
+@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
+class Limited_Spectrum_Config(gc.Limited_Spectrum_Config_Base[Hamiltonian_Config, Spectrum_Part]):  # noqa: D101 - docstring inherited.
+    @override
+    def setup_excitation_operator(self):
+        return matrix_setup.setup_excitation_operator(initial_config=self)
 
+
+@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
+class Full_Spectrum_Config[Spectrum_Name, Quantum_Numbers](  # noqa: D101 - docstring inherited
+    gc.Full_Spectrum_Config_Base[Spectrum_Name, Quantum_Numbers],
+    Limited_Spectrum_Config[Spectrum_Name, Quantum_Numbers],
+):
     def __post_init__(self):
         super().__post_init__()
-        _logger.info(f"Config loaded:\n{_parse_hamiltonian_kwargs_intro_message(self.hamiltonian)}")
+        _logger.info(f"Config created:\n{_parse_hamiltonian_kwargs_intro_message(self.hamiltonian)}")
 
     @override
-    def get_spectrum_path(self, operator_name_suffix: str = ""):  # noqa: D102 - docstring inherited.
-        if self.spectrum is None:
-            raise ValueError("Spectrum_Config is required.")
+    def get_spectrum_path(self, operator_name_suffix: str = ""):
         system_folder = self.hamiltonian.get_calc_folder()
         folder = system_folder / f"{self.spectrum.name}_spectra"
         suffix = _get_spectrum_figure_suffix(self.hamiltonian, self.spectrum, operator_name_suffix)
         path = folder / f"{self.spectrum.name}{suffix}.npz"
         return path
 
+
+class Position_Correlation_Name(enum.StrEnum):
+    """Names of the available operators."""
+
+    HOLE_CORRELATIONS = "hole_correlations"
+    SZ_CORRELATIONS = "Sz_correlations"
+    SINGLET_SINGLET = "singlet-singlet"
+
+
+@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
+class Position_Shift(gc.Position_Shift_Base):  # noqa: D101 docstring inherited
+    leg: int
+    rung: Literal[0, 1]
+
+
+class Position_Correlation_Part(gc.Position_Correlation_Part):
+    """Information necessary calculate a position correlation operator.
+
+    fixed_distances: fixed relative shifts between operator terms.
+        For hole- and Sz-correlations, a state is projected using len(fixed_distances)+1 number operators.
+        Their poistions relative to the first one are defined by fixed_distances.
+        Then a number operator (times some combinatorics based on the total number of particles) is evaluated
+        for each position separately.
+        For singlet-singlet correlations, fixed_distances defines the structure of the two singlet operators;
+        all relative positions of the singlet operators are computed.
+    num_threads: Setting to None indicates to copy the attribute from hamiltonian config when put into Config.
+    """
+
+
+@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
+class Limited_Position_Correlation_Config(  # noqa: D101 docstring inherited
+    gc.Limited_Position_Correlation_Config_Base[Hamiltonian_Config, Position_Correlation_Name, Position_Shift]
+):
     @override
-    def setup_excitation_operator(self):  # noqa: D102 - docstring inherited.
-        if self.spectrum is None:
-            raise ValueError("Spectrum_Config is required.")
-        return matrix_setup.setup_excitation_operator(initial_config=self)
+    def setup_excitation_operator(self, free_shift):
+        """Return callables to set up the excitation operator.
+
+        Returns a callable to get the operator, info about its final symmetry block,
+        and a callable to construct the Hamiltonian in that block.
+
+        Args:
+        free_shift: relative position of the operators not specified by the fixed shifts of the Hamiltonian.
+                    For `n`-hole correlations, `n-1` relative positions are fixed and one is free.
+                    For singlet-singlet correlations, the intra-singlet structure is fixed
+                    and the relative position of the singlet operators is free.
+
+        """
+        if self.name != Position_Correlation_Name.SINGLET_SINGLET:
+            raise NotImplementedError()  # FIXME: Implement.
+        return matrix_setup.get_position_correlation_operator(initial_config=self, free_shift=free_shift)
 
 
-@dataclass
-class Combined_Position_Config(gc.Combined_Config_Base):  # noqa: D101 - docstring inherited.
-    hamiltonian: Hamiltonian_Config
-    spectrum: Position_Correlation_Config
-
+@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
+class Full_Position_Correlation_Config(  # noqa: D101 - docstring inherited.
+    gc.Full_Position_Correlation_Config_Base[Hamiltonian_Config, Position_Correlation_Name, Position_Shift],
+    Limited_Position_Correlation_Config,
+):
     @override
-    def get_spectrum_path(self, operator_name_suffix: str = ""):  # noqa: D102 - docstring inherited.
-        if self.spectrum is None:
-            raise ValueError("Position_Correlation_Config is required.")
+    def get_spectrum_path(self, operator_name_suffix):
         system_folder = self.hamiltonian.get_calc_folder()
         folder = system_folder / f"{self.spectrum.name}_spectra"
         suffix = _get_position_correlation_figure_suffix(self.hamiltonian, self.spectrum, operator_name_suffix)
         path = folder / f"{self.spectrum.name}{suffix}.npz"
         return path
-
-    @override
-    def setup_excitation_operator(self):  # noqa: D102 - docstring inherited.
-        # TODO: fill in
-        pass
 
 
 def _parse_hamiltonian_kwargs_intro_message(config: Hamiltonian_Config) -> str:
@@ -248,7 +264,7 @@ def _parse_hamiltonian_kwargs_intro_message(config: Hamiltonian_Config) -> str:
 
 
 def _get_spectrum_figure_suffix(
-    hamiltonian_config: Hamiltonian_Config, spectrum_config: Spectrum_Config, operator_name_suffix: str
+    hamiltonian_config: Hamiltonian_Config, spectrum_config: gc.Spectrum_Part, operator_name_suffix: str
 ):
     weight_string = "_".join([f"{name}{weight}" for name, weight in asdict(hamiltonian_config.weights).items()])
     operator_name_suffix = f"_{operator_name_suffix}" if operator_name_suffix else ""
@@ -264,7 +280,7 @@ def _get_spectrum_figure_suffix(
 
 
 def _get_position_correlation_figure_suffix(
-    hamiltonian_config: Hamiltonian_Config, correlation_config: Position_Correlation_Config, operator_name_suffix: str
+    hamiltonian_config: Hamiltonian_Config, correlation_config: gc.Position_Correlation_Part, operator_name_suffix: str
 ):
     weight_string = "_".join([f"{name}{weight}" for name, weight in asdict(hamiltonian_config.weights).items()])
     operator_name_suffix = f"_{operator_name_suffix}" if operator_name_suffix else ""

@@ -25,15 +25,15 @@ ctypedef int (*get_value_type)(state_int* const state, pos_int[:] positions) nog
 cdef Dummy_Aggregator DUMMY_AGGREGATOR = Dummy_Aggregator() 
 # nogil function does not allow aggregator iniciation in function default argument
 
-def get_hole_spin_projection_correlations(config: configs.Combined_Position_Config):
+def get_hole_spin_projection_correlations(config: configs.Full_Position_Correlation_Config):
     def calculate():
         state_translator, basis_map, symmetries = config.hamiltonian.get_translators()
         eigvals, eigvecs = get_lowest_eigenpairs(config)
-        if not config.spectrum.fixed_distances:
+        if not config.correlations.fixed_distances:
             fixed_distances = np.empty([0,len(config.hamiltonian.periodicities)], dtype=np.int32)
         else:
-            fixed_distances = np.array([shift.to_npint32() for shift in config.spectrum.fixed_distances], dtype=np.int32)
-        spin_or_hole = config.spectrum.name == "Sz_correlations"
+            fixed_distances = np.array([shift.to_npint32() for shift in config.correlations.fixed_distances], dtype=np.int32)
+        spin_or_hole = config.correlations.name == "Sz_correlations"
         num_degenerate_states = 0
         for j in range(len(eigvals)):
             # average over degenerate ground states
@@ -51,14 +51,12 @@ def get_hole_spin_projection_correlations(config: configs.Combined_Position_Conf
     varied_shifts, spectrum = load_calculate_save(path, load_fun=load_spectrum, calc_fun=calculate, save_fun=save_spectrum)
     return varied_shifts, spectrum
 
-def get_singlet_singlet_correlations(config: configs.Combined_Position_Config):
+def get_singlet_singlet_correlations(config: configs.Full_Position_Correlation_Config):
     def calculate(**kwargs):
         state_translator, basis_map, py_symmetries = config.hamiltonian.get_translators()
         eigvals, eigvecs = get_lowest_eigenpairs(config)
-        num_nodes = config.hamiltonian.num_nodes
-        fixed_distances = np.array([shift.to_npint32() for shift in config.spectrum.fixed_distances], dtype=np.int32)
         num_degenerate_states = 0
-        get_operaor = lambda fixed_distances: get_position_correlation_operator(config, fixed_distances)[0]()
+        get_operaor = lambda free_shift: config.setup_excitation_operator(config, free_shift)[0]()
         for j in range(len(eigvals)):
             # average over degenerate ground states
             if (abs(eigvals[0]-eigvals[j]) > 1e-6):  # TODO: set a single threshold for all functions.
@@ -66,9 +64,9 @@ def get_singlet_singlet_correlations(config: configs.Combined_Position_Config):
             num_degenerate_states += 1
             gs = eigvecs[:,j]
             if j == 0:
-                varied_shifts, spectrum = calculate_singlet_singlet_correlations(num_nodes, fixed_distances, gs, py_symmetries, get_operaor)
+                varied_shifts, spectrum = calculate_singlet_singlet_correlations(gs, py_symmetries, get_operaor)
             else:
-                _, tmp_spectrum = calculate_singlet_singlet_correlations(num_nodes, fixed_distances, gs, py_symmetries, get_operaor)
+                _, tmp_spectrum = calculate_singlet_singlet_correlations(gs, py_symmetries, get_operaor)
                 spectrum += tmp_spectrum
         return varied_shifts, spectrum / num_degenerate_states
     path = config.get_spectrum_path()
@@ -111,9 +109,10 @@ def calculate_hole_spin_projection_correlations(Py_State_Translator py_state_tra
     return varied_shifts, corrs
 
 
-def calculate_singlet_singlet_correlations(int num_nodes, int[:,:] fixed_distances, VALUE_TYPE_t[:] eigvec, Py_Symmetry_Generator symmetries, get_operator):
+def calculate_singlet_singlet_correlations(VALUE_TYPE_t[:] eigvec, Py_Symmetry_Generator symmetries, get_operator):
     cdef size_t num_shifts = symmetries.cpp_shared_ptr.get().get_num_shifts()
     cdef int[:,:] shifts = np.empty([3,num_shifts], dtype=np.int32)
+    cdef pos_int num_nodes = symmetries.get_basis_length()
     varied_shifts = np.empty([num_nodes,num_shifts], dtype=np.int32)
     cdef int i
     corrs = np.empty(num_nodes)

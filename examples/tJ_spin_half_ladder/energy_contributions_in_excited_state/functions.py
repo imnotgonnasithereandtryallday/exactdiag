@@ -55,7 +55,7 @@ def load_hamiltonian_matrices(
     return tl_matrix, tr_matrix, jl_matrix, jr_matrix
 
 
-def load_spec_func_matrix(config: configs.Config, pm: Literal["plus", "minus"]) -> Sparse_Matrix:
+def load_spec_func_matrix(config: configs.Full_Spectrum_Config, pm: Literal["plus", "minus"]) -> Sparse_Matrix:
     # originally 'plus' if pm else 'minus'
     if config.spectrum.operator_symmetry_qs is None:
         raise ValueError("config.spectrum.operator_symmetry_qs must not be None.")
@@ -318,7 +318,7 @@ class Excited_State_Properties:
 
 
 def calculate_excited_state_properties(
-    config: configs.Config,
+    config: configs.Full_Spectrum_Config,
     j_to_ts: list[float],
     num_excited_states: int,
     verbose: bool,

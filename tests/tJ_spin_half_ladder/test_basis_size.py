@@ -91,13 +91,11 @@ class Precalculated:
             total_spin_projection=total_spin_projection,
         )
 
-    def to_he_config(self) -> lc.Config:
-        h_config = self.to_hamiltonian_config()
-        e_config = lc.Eigenpair_Config(
-            num_eigenpairs=len(self.eigvals),
-            num_threads=10,
-        )
-        return lc.Config(
-            hamiltonian=h_config,
-            eigenpair=e_config,
+    def to_he_config(self) -> lc.Full_Spectrum_Config:
+        return lc.Eigenpair_Config(
+            hamiltonian=self.to_hamiltonian_config(),
+            eigenpair={
+                "num_eigenpairs": len(self.eigvals),
+                "num_threads": 10,
+            },
         )

@@ -1,7 +1,9 @@
 from itertools import product
 import logging
+import collections
 import copy
 import pathlib
+import typing
 
 import numpy as np
 from pydantic import field_validator
@@ -15,22 +17,25 @@ from exactdiag.general.lanczos_diagonalization import (
     Eigenvectors,
 )
 from exactdiag.tJ_spin_half_ladder import position_correlations
-from exactdiag.tJ_spin_half_ladder.configs import Config, Combined_Position_Config
+from exactdiag.tJ_spin_half_ladder import configs
 from exactdiag.plotting import choose_plot
 
 
 _logger = logging.getLogger(__name__)
 
-type IntSymmetryQs = tuple[int, int]
+
+class IntSymmetryQs(collections.namedtuple):
+    """Symmetry quantum numbers as named tuple."""
+
+    leg: int
+    rung: typing.Literal[0, 1]
 
 
 def get_eigenpairs(
-    config: Config,
-) -> dict[IntSymmetryQs, tuple[Eigenvalues, Eigenvectors]] | tuple[Eigenvalues, Eigenvectors]:
+    config: configs.Eigenpair_Config,
+) -> tuple[Eigenvalues, Eigenvectors]:
     """Return eigevalues and eigenvectors.
 
-    If `hamiltonian.symmetry_qs` is `None`, return a dictionary mapping
-    `symmetry_qs` as tuple of ints to a tuple of `(Eigenvalues, Eigenvectors)`.
     `eigenvectors[i, j]` is the `i`-th component of the `j`-th eigenvector which corresponds to `eigenvalues[j]`.
     """
     if config.hamiltonian.symmetry_qs is None:
@@ -38,11 +43,10 @@ def get_eigenpairs(
     return get_lowest_eigenpairs(config)
 
 
-def get_all_k_eigenpairs(config: Config) -> dict[IntSymmetryQs, tuple[Eigenvalues, Eigenvectors]]:
-    """Return eigenvalues and eigenvectors for all unique `symmetry_qs`.
+def get_all_k_eigenpairs(config: configs.Eigenpair_Config) -> dict[IntSymmetryQs, tuple[Eigenvalues, Eigenvectors]]:
+    """Return a map from all unique `symmetry_qs` to corresponding eigenvalues and eigenvectors.
 
-    If `hamiltonian.symmetry_qs` is None, the return is the same as that of `get_eigenpairs`,
-    but here, the semantics of the return value does not change when `symmetry_qs` is specified.
+    The values are as described in `get_eigenpairs`.
     """
     mut_config = copy.deepcopy(config)
     mkx = config.hamiltonian.num_rungs // 2 + 1
@@ -62,7 +66,7 @@ class Spectrum:
     # TODO: return from more functions // make staticmethod?
     ws: np.ndarray
     spectrum: np.ndarray
-    config: Config | Combined_Position_Config
+    config: configs.Full_Spectrum_Config | configs.Full_Position_Correlation_Config
     info: dict = Field(default_factory=dict)
 
     @field_validator("ws", "spectrum", mode="before")
@@ -77,17 +81,13 @@ class Spectrum:
         return figure_path
 
 
-def get_excitation_spectrum(config: Config, limited_qs: bool = True) -> Spectrum:
+def get_excitation_spectrum(config: configs.Full_Spectrum_Config, limited_qs: bool = True) -> Spectrum:
     """Return the spectrum specified in the config."""
     config = copy.deepcopy(config)
 
     base_name = config.spectrum.name
     info = {}
     if base_name in {"current_rung", "current_leg"}:
-        if config.spectrum.operator_symmetry_qs is None:
-            _logger.warning(
-                "Current operator does not currently support operator_symmetry_qs=None. Continuing with (0,0)."
-            )
         ws, spectrum = get_spectrum(config=config)
     elif base_name == "Szq":
         ws, spectrum, info = get_Szq_spectra(config=config, limited_qs=limited_qs)
@@ -101,19 +101,19 @@ def get_excitation_spectrum(config: Config, limited_qs: bool = True) -> Spectrum
     return Spectrum(ws, spectrum, config, info)
 
 
-def get_position_correlations(config: Combined_Position_Config):
-    base_name = config.spectrum.name
+def get_position_correlations(config: configs.Full_Position_Correlation_Config):
+    base_name = config.correlatons.name
     if base_name in {"hole_correlations", "Sz_correlations"}:
         ws, spectrum = position_correlations.get_hole_spin_projection_correlations(config)
 
     elif base_name == "singlet-singlet":
         ws, spectrum = position_correlations.get_singlet_singlet_correlations(config)
 
-    info = {"fixed_distances": config.spectrum.fixed_distances}
+    info = {"fixed_distances": config.correlatons.fixed_distances}
     return Spectrum(ws, spectrum, config, info)
 
 
-def get_Szq_spectra(config: Config, limited_qs: bool):
+def get_Szq_spectra(config: configs.Full_Spectrum_Config, limited_qs: bool):
     config = copy.deepcopy(config)
     mkx, qxs, qys = get_mkx_qxs_qys(config, limited_qs=False)  # We conditionally limit qs ourselves later.
     qs_list = product(qxs, qys)
@@ -132,7 +132,7 @@ def get_Szq_spectra(config: Config, limited_qs: bool):
     return ws, spectra, {"qs_list": qs_list}
 
 
-def get_spectral_function_spectra(config: Config, limited_qs: bool):
+def get_spectral_function_spectra(config: configs.Full_Spectrum_Config, limited_qs: bool):
     config = copy.deepcopy(config)
     mkx, qxs, qys = get_mkx_qxs_qys(config=config, limited_qs=limited_qs)
     plus_minus_conditions = [
@@ -162,7 +162,7 @@ def get_spectral_function_spectra(config: Config, limited_qs: bool):
     return ws, spectra, {"qs_list": qs_list}
 
 
-def get_offdiagonal_spectral_function_spectra(config: Config, limited_qs: bool):
+def get_offdiagonal_spectral_function_spectra(config: configs.Full_Spectrum_Config, limited_qs: bool):
     raise NotImplementedError()
     # config = copy.deepcopy(config)
     # mkx, qxs, qys = get_mkx_qxs_qys(config=config, limited_qs=limited_qs)
@@ -184,7 +184,7 @@ def get_offdiagonal_spectral_function_spectra(config: Config, limited_qs: bool):
     # return ws, spectra, {'qs_list': qs_list}
 
 
-def get_mkx_qxs_qys(config: Config, limited_qs: bool):
+def get_mkx_qxs_qys(config: configs.Limited_Spectrum_Config, limited_qs: bool):
     mkx = config.hamiltonian.num_rungs
     input_qs = config.spectrum.operator_symmetry_qs
     if input_qs is None:
@@ -200,11 +200,11 @@ def get_mkx_qxs_qys(config: Config, limited_qs: bool):
     return mkx, qxs, qys
 
 
-def plot_excitation_spectrum(config: Config, show: bool = False, **kwargs) -> None:
+def plot_excitation_spectrum(config: configs.Full_Spectrum_Config, show: bool = False, **kwargs) -> None:
     spectrum = get_excitation_spectrum(config=config, **kwargs)
     choose_plot(name=config.spectrum.name, spectrum=spectrum, show=show)
 
 
-def plot_position_correlation(config: Combined_Position_Config, show: bool = False) -> None:
+def plot_position_correlation(config: configs.Full_Position_Correlation_Config, show: bool = False) -> None:
     spectrum = get_position_correlations(config=config)
     choose_plot(name=config.spectrum.name, spectrum=spectrum, show=show)

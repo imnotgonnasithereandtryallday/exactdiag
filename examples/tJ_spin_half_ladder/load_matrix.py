@@ -14,7 +14,7 @@ from exactdiag.general.sparse_matrices import Sparse_Matrix, Added_Sparse_Matric
 def run_example(config_file: pathlib.Path | str = None):
     if config_file is None:
         config_file = pathlib.Path(__file__).with_suffix(".json")
-    config = api.Config.load(config_file)
+    config = api.Full_Spectrum_Config.load(config_file)
 
     eigvals, eigvecs = api.get_eigenpairs(config)
     ground_state = eigvecs[:, 0]
