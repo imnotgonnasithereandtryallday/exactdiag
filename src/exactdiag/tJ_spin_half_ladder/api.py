@@ -1,6 +1,5 @@
 from itertools import product
 import logging
-import collections
 import copy
 import pathlib
 import typing
@@ -24,7 +23,7 @@ from exactdiag.plotting import choose_plot
 _logger = logging.getLogger(__name__)
 
 
-class IntSymmetryQs(collections.namedtuple):
+class IntSymmetryQs(typing.NamedTuple):
     """Symmetry quantum numbers as named tuple."""
 
     leg: int
@@ -82,19 +81,20 @@ class Spectrum:
 
 
 def get_excitation_spectrum(config: configs.Full_Spectrum_Config, limited_qs: bool = True) -> Spectrum:
-    """Return the spectrum specified in the config."""
-    config = copy.deepcopy(config)
+    """Return the spectrum specified in the config.
 
+    More that the config specifies is computed for most operators.
+    """
+    # TODO: This calculation of mupltiple spectra from one config needs to be handled better.
     base_name = config.spectrum.name
     info = {}
     if base_name in {"current_rung", "current_leg"}:
         ws, spectrum = get_spectrum(config=config)
     elif base_name == "Szq":
         ws, spectrum, info = get_Szq_spectra(config=config, limited_qs=limited_qs)
-    elif base_name == "spectral_function":
+    elif base_name in {"spectral_function_plus", "spectral_function_minus"}:
         ws, spectrum, info = get_spectral_function_spectra(config=config, limited_qs=limited_qs)
-    elif base_name in {"offdiag_spec_func", "offdiagonal_spectral_function"}:
-        # shortened as the spectrum name was too long
+    elif base_name == {"offdiagonal_spectral_function_plus", "offdiagonal_spectral_function_minus"}:
         ws, spectrum, info = get_offdiagonal_spectral_function_spectra(config=config, limited_qs=limited_qs)
     else:
         raise ValueError(f"{base_name} is not supported")
@@ -102,14 +102,14 @@ def get_excitation_spectrum(config: configs.Full_Spectrum_Config, limited_qs: bo
 
 
 def get_position_correlations(config: configs.Full_Position_Correlation_Config):
-    base_name = config.correlatons.name
+    base_name = config.correlations.name
     if base_name in {"hole_correlations", "Sz_correlations"}:
         ws, spectrum = position_correlations.get_hole_spin_projection_correlations(config)
 
     elif base_name == "singlet-singlet":
         ws, spectrum = position_correlations.get_singlet_singlet_correlations(config)
 
-    info = {"fixed_distances": config.correlatons.fixed_distances}
+    info = {"fixed_distances": config.correlations.fixed_distances}
     return Spectrum(ws, spectrum, config, info)
 
 
@@ -136,10 +136,9 @@ def get_spectral_function_spectra(config: configs.Full_Spectrum_Config, limited_
     config = copy.deepcopy(config)
     mkx, qxs, qys = get_mkx_qxs_qys(config=config, limited_qs=limited_qs)
     plus_minus_conditions = [
-        ("plus", config.hamiltonian.num_holes > 0),
-        ("minus", config.hamiltonian.num_holes < config.hamiltonian.num_nodes),
+        (configs.Spectrum_Name.SPECTRAL_FUNCTION_PLUS, config.hamiltonian.num_holes > 0),
+        (configs.Spectrum_Name.SPECTRAL_FUNCTION_MINUS, config.hamiltonian.num_holes < config.hamiltonian.num_nodes),
     ]
-    base_name = config.spectrum.name
     qs_list = list(product(qxs, qys))  # Why do i get empty plots without the list?
     shape = [sum([i[1] for i in plus_minus_conditions]), len(qs_list), config.spectrum.omega_steps]
     spectra = np.empty(shape, dtype=float)
@@ -148,16 +147,16 @@ def get_spectral_function_spectra(config: configs.Full_Spectrum_Config, limited_
         if limited_qs and qx > mkx // 2 + 1:
             continue  # TODO: this is inconsistent with get_Szq_spectra
         qs = np.array([qx, qy], dtype=int)  # np.int32)
-        for o, (suffix, condition) in enumerate(plus_minus_conditions):
+        for o, (name, condition) in enumerate(plus_minus_conditions):
             if not condition:
                 continue
-            if suffix == "minus":  # TODO: Fragile to change of suffix order.
+            if name == configs.Spectrum_Name.SPECTRAL_FUNCTION_MINUS:  # TODO: Fragile to change of suffix order.
                 # qs in calculation refer to how the state's momentum changes,
                 # qs in params file refer to the removed electron's momentum,
                 # which is the standard for index of annihilation operator
                 qs = -qs
             config.spectrum.operator_symmetry_qs = {"leg": qs[0], "rung": qs[1] % 2}
-            config.spectrum.name = f"{base_name}_{suffix}"
+            config.spectrum.name = name
             ws[o, i, :], spectra[o, i, :] = get_spectrum(config)
     return ws, spectra, {"qs_list": qs_list}
 
@@ -186,8 +185,8 @@ def get_offdiagonal_spectral_function_spectra(config: configs.Full_Spectrum_Conf
 
 def get_mkx_qxs_qys(config: configs.Limited_Spectrum_Config, limited_qs: bool):
     mkx = config.hamiltonian.num_rungs
-    input_qs = config.spectrum.operator_symmetry_qs
-    if input_qs is None:
+    input_qs = None  # config.spectrum.operator_symmetry_qs
+    if input_qs is None:  # FIXME: Not possible anymore!
         if limited_qs:
             qxs = range(mkx // 2 + 1)
         else:
@@ -207,4 +206,4 @@ def plot_excitation_spectrum(config: configs.Full_Spectrum_Config, show: bool = 
 
 def plot_position_correlation(config: configs.Full_Position_Correlation_Config, show: bool = False) -> None:
     spectrum = get_position_correlations(config=config)
-    choose_plot(name=config.spectrum.name, spectrum=spectrum, show=show)
+    choose_plot(name=config.correlations.name, spectrum=spectrum, show=show)

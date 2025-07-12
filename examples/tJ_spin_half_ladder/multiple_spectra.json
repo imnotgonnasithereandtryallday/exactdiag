@@ -20,7 +20,10 @@
     "spectrum": {
         "name": "current_rung",
         "omega_max": 3,
-        "operator_symmetry_qs": null,
+        "operator_symmetry_qs": {
+            "leg": 0,
+            "rung": 0
+        },
         "broadening": 1e-2
     }
 }

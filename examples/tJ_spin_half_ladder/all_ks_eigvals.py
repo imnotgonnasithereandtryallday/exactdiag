@@ -5,12 +5,13 @@ import sys
 
 from exactdiag.logging_utils import setup_logging
 from exactdiag.tJ_spin_half_ladder import api
+from exactdiag.tJ_spin_half_ladder import configs
 
 
 def run_example(config_file: pathlib.Path | str = None):
     if config_file is None:
         config_file = pathlib.Path(__file__).with_suffix(".json")
-    config = api.Eigenpair_Config.load(config_file)
+    config = configs.Eigenpair_Config.load(config_file)
 
     k_to_pairs = api.get_all_k_eigenpairs(config)
     print("(kx,ky), [eigenvalues], eigenvector length")

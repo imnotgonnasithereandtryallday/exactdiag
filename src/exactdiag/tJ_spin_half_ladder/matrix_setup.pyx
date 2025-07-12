@@ -233,7 +233,7 @@ def setup_excitation_operator(initial_config: "config.Limited_Spectrum_Config"):
     #       Generalize.
 
     name = initial_config.spectrum.name     
-    if name == 'Szq':
+    if name == configs.Spectrum_Name.SZQ:
         operator_index_combinations = np.array([(i,) for i in range(num_nodes)], dtype=np_pos_int) 
         # explicitly diagonal only if qs == 0
         weights = (0, 0.5 / np.sqrt(num_nodes))
@@ -246,7 +246,7 @@ def setup_excitation_operator(initial_config: "config.Limited_Spectrum_Config"):
         calculate_weights = get_weights_spin_projection
         commutes_with_symmetries = True
 
-    elif name == 'current_rung':
+    elif name == configs.Spectrum_Name.CURRENT_RUNG:
         startpoints = np.array([i for i in range(num_nodes)], dtype=np_pos_int)
         endpoint_shifts = [[(0,1)]] 
         qy += 1 # the sign difference between hopping directions is taken care of by the qy+=1 change in the final state symmetry
@@ -263,7 +263,7 @@ def setup_excitation_operator(initial_config: "config.Limited_Spectrum_Config"):
         calculate_weights = NULL
         commutes_with_symmetries = True
 
-    elif name == 'current_leg':
+    elif name == configs.Spectrum_Name.CURRENT_LEG:
         startpoints = np.array([i for i in range(num_nodes)], dtype=np_pos_int)
         endpoint_shifts = [[(1,0)], [(-1,0)]]
         startpoint_weights = get_iqr_weights(startpoints, py_symmetries, base_weights=(0,1j), q=(qx,qy))
@@ -279,7 +279,7 @@ def setup_excitation_operator(initial_config: "config.Limited_Spectrum_Config"):
         calculate_weights = NULL
         commutes_with_symmetries = True
 
-    elif name == 'spectral_function_plus': 
+    elif name == configs.Spectrum_Name.SPECTRAL_FUNCTION_PLUS:
         # adds electron with spin down if the initial spin projection > 0, 
         # otherwise the added electron has spin up
         # so that the final spin projection is close to zero and non-negative (if possible)
@@ -300,7 +300,7 @@ def setup_excitation_operator(initial_config: "config.Limited_Spectrum_Config"):
             final_config.hamiltonian.total_spin_projection += 1
             generate_new_state = add_spin_up
         
-    elif name == 'spectral_function_minus':
+    elif name == configs.Spectrum_Name.SPECTRAL_FUNCTION_MINUS:
         # removes electron with spin down if the initial spin projection <= 0, 
         # otherwise the removed electron has spin up
         # so that the final spin projection is close to zero and non-negative (if possible)

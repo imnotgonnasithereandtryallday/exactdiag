@@ -8,13 +8,14 @@ import numpy as np
 
 from exactdiag.logging_utils import setup_logging
 from exactdiag.tJ_spin_half_ladder import api
+from exactdiag.tJ_spin_half_ladder import configs
 from exactdiag.general.sparse_matrices import Sparse_Matrix, Added_Sparse_Matrices
 
 
 def run_example(config_file: pathlib.Path | str = None):
     if config_file is None:
         config_file = pathlib.Path(__file__).with_suffix(".json")
-    config = api.Full_Spectrum_Config.load(config_file)
+    config = configs.Eigenpair_Config.load(config_file)
 
     eigvals, eigvecs = api.get_eigenpairs(config)
     ground_state = eigvecs[:, 0]

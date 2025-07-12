@@ -16,10 +16,11 @@ from exactdiag.general import symmetry
 from exactdiag.general import sparse_matrices
 from exactdiag.general.group import symmetry_generator
 
-# TODO: Setting config on pydantic dataclasses and then inheriting from them
+# NOTE: Setting config on pydantic dataclasses and then inheriting from them
 #       has some very stupid interactions.
 #       We would like the config to be {"validate_assignment": True, "extra": "forbid"}
 #       on all of these. We give it only to those classes that do not make sense to subclass.
+#       Pydantic also does not play well with generics and seems to require their manual validation.
 
 
 @dataclass(kw_only=True)
@@ -143,6 +144,10 @@ class Eigenpair_Config[Hamiltonian_co](_Json_Loadable):
             self.eigenpair.num_threads = self.hamiltonian.num_threads
         return self
 
+    # def __post_init__(self):
+    #     if self.eigenpair.num_threads is None:
+    #         self.eigenpair.num_threads = self.hamiltonian.num_threads
+
     def get_eigenpair_paths(self) -> tuple[pathlib.Path, pathlib.Path]:
         """Return paths to the files with the eigenvalues and eigenvectors."""
         hamiltonian_string = "_".join([
@@ -155,7 +160,7 @@ class Eigenpair_Config[Hamiltonian_co](_Json_Loadable):
         return eigval_path, eigvec_path
 
 
-@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
+@dataclass(kw_only=True)
 class Operator_Part_Base[Name]:
     """Information necessary, in addition to a Hamiltonian_Config instance, to calculate an operator.
 
@@ -166,7 +171,7 @@ class Operator_Part_Base[Name]:
     num_threads: int | None = None
 
 
-@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
+@dataclass(kw_only=True)#, config={"validate_assignment": True, "extra": "forbid"})
 class Spectrum_Part[Name, Quantum_Numbers_co](Operator_Part_Base[Name]):
     r"""Information necessary, in addition to a Hamiltonian_Config instance, to calculate an operator.
 
@@ -228,7 +233,7 @@ class Full_Spectrum_Config_Base[Hamiltonian_co, SP_co](
         """Return path the spectrum should be saved to."""
 
 
-@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
+@dataclass(kw_only=True)#, config={"validate_assignment": True, "extra": "forbid"})
 class Position_Correlation_Part[Name, Position_Shift_co](Operator_Part_Base[Name]):
     r"""Information necessary, in addition to a Hamiltonian_Config instance, to get a position correlation operator.
 
@@ -239,7 +244,7 @@ class Position_Correlation_Part[Name, Position_Shift_co](Operator_Part_Base[Name
     fixed_distances: list[Position_Shift_co]
 
 
-@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
+@dataclass(kw_only=True)#, config={"validate_assignment": True, "extra": "forbid"})
 class Limited_Position_Correlation_Config_Base[Hamiltonian_co, Name, Position_Shift_co](_Json_Loadable):
     """Information necessary calculate a position correlation operator."""
 
@@ -265,7 +270,7 @@ class Limited_Position_Correlation_Config_Base[Hamiltonian_co, Name, Position_Sh
         """
 
 
-@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
+@dataclass(kw_only=True)#, config={"validate_assignment": True, "extra": "forbid"})
 class Full_Position_Correlation_Config_Base[Hamiltonian_co, Name, Position_Shift_co](
     Limited_Position_Correlation_Config_Base[Hamiltonian_co, Name, Position_Shift_co], Eigenpair_Config[Hamiltonian_co]
 ):

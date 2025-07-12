@@ -20,9 +20,9 @@ def choose_plot(name, **kwargs):
     elif name in {"current_rung", "current_leg"}:
         rung_leg = name.split("_")[1]
         plot_current_rung_leg(rung_leg=rung_leg, **kwargs)
-    elif name == "spectral_function":
+    elif name in {"spectral_function_plus", "spectral_function_minus"}:
         plot_all_spectral_functions(**kwargs)
-    elif name == "offdiagonal_spectral_function":
+    elif name in {"offdiagonal_spectral_function_plus", "offdiagonal_spectral_function_minus"}:
         plot_all_offdiagonal_spectral_functions(**kwargs)
     elif name == "hole_correlations":
         plot_hole_correlations(**kwargs)

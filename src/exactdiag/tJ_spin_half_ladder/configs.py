@@ -9,6 +9,8 @@ import pathlib
 from typing import Literal, override
 
 import numpy as np
+import numpydantic
+from pydantic import field_validator
 from pydantic.dataclasses import dataclass, Field
 
 from exactdiag.general.matrix_rules_utils import set_combinatorics
@@ -35,7 +37,7 @@ class Quantum_Numbers(gc.Quantum_Numbers_Base):  # noqa: D101 docstring inherite
     rung: Literal[0, 1]
 
 
-@dataclass(kw_only=True, config={"arbitrary_types_allowed": True, "validate_assignment": True, "extra": "forbid"})
+@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
 class Hamiltonian_Config(gc.Hamiltonian_Config_Base[Quantum_Numbers]):
     r"""Information necessary to construct a Hamiltonian.
 
@@ -54,7 +56,24 @@ class Hamiltonian_Config(gc.Hamiltonian_Config_Base[Quantum_Numbers]):
     num_holes: int
     weights: Weights
     total_spin_projection: int = None  # noqa # TODO: How to specify that the value is filled in if not given but the initialized object always has it?
-    combinatorics_table: np.ndarray = Field(init=False)
+    combinatorics_table: numpydantic.NDArray[
+        numpydantic.Shape["* num_nodes_plus_one, * num_nodes_plus_one"], int  # noqa: F722 - Not a forward type annotation.
+    ] = Field(init=False)
+
+    @field_validator("weights", mode="before")
+    @classmethod
+    def _validate_weights(cls, value):
+        # TODO: Can this be defined on the Weights class?
+        if isinstance(value, Weights):
+            return value
+        return Weights(**value)
+
+    @field_validator("symmetry_qs", mode="before")
+    @classmethod
+    def _validate_qs(cls, value):
+        if isinstance(value, Quantum_Numbers):
+            return value
+        return Quantum_Numbers(**value)
 
     # TODO: How to handle validations when changing num_holes or total_spin_projection?
     def __post_init__(self):
@@ -65,6 +84,7 @@ class Hamiltonian_Config(gc.Hamiltonian_Config_Base[Quantum_Numbers]):
                 f"Incompatible total_spin_projection {self.total_spin_projection}/2 with {self.num_spins} spins."
             )
         self.combinatorics_table = set_combinatorics(self.num_nodes)
+        _logger.info(f"Config created:\n{_parse_hamiltonian_kwargs_intro_message(self)}")
 
     def __repr__(self):
         attrs = asdict(self)
@@ -127,8 +147,17 @@ class Hamiltonian_Config(gc.Hamiltonian_Config_Base[Quantum_Numbers]):
         return dic
 
 
-type Eigenpair_Config = gc.Eigenpair_Config[Hamiltonian_Config]
-type Spectrum_Part = gc.Spectrum_Part[Spectrum_Name, Quantum_Numbers]
+@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
+class Eigenpair_Config(gc.Eigenpair_Config[Hamiltonian_Config]):  # noqa: D101 - docstring inherited.
+    # Mostly just a type alias but pydantic does not validate the Hamiltonian_Config automatically.
+    # So the full configs have to inherit it again.
+
+    @field_validator("hamiltonian", mode="before")
+    @classmethod
+    def _validate_hamiltonian(cls, value):
+        if isinstance(value, Hamiltonian_Config):
+            return value
+        return Hamiltonian_Config(**value)
 
 
 class Spectrum_Name(enum.StrEnum):
@@ -137,28 +166,66 @@ class Spectrum_Name(enum.StrEnum):
     CURRENT_RUNG = enum.auto()
     CURRENT_LEG = enum.auto()
     SZQ = "Szq"
-    SPECTRAL_FUNCTION = enum.auto()
-    OFFIDAG_SPEC_FUNC = "offdiagonal_spectral_function"
+    SPECTRAL_FUNCTION_PLUS = enum.auto()
+    SPECTRAL_FUNCTION_MINUS = enum.auto()
+    OFFIDAG_SPEC_FUNC_PLUS = "offdiagonal_spectral_function_plus"
+    OFFIDAG_SPEC_FUNC_MINUS = "offdiagonal_spectral_function_minus"
+
+
+@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
+class Spectrum_Part(gc.Spectrum_Part[Spectrum_Name, Quantum_Numbers]):  # noqa: D101 - docstring inherited.
+    # Just a type alias but pydantic does not validate name and operator_symmetry_qs automatically.
+    @field_validator("name", mode="before")
+    @classmethod
+    def _validate_name(cls, value):
+        if isinstance(value, Spectrum_Name):
+            return value
+        return Spectrum_Name(value)
+
+    @field_validator("operator_symmetry_qs", mode="before")
+    @classmethod
+    def _validate_qs(cls, value):
+        if isinstance(value, Quantum_Numbers):
+            return value
+        return Quantum_Numbers(**value)
 
 
 @dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
 class Limited_Spectrum_Config(gc.Limited_Spectrum_Config_Base[Hamiltonian_Config, Spectrum_Part]):  # noqa: D101 - docstring inherited.
+    @field_validator("hamiltonian", mode="before")
+    @classmethod
+    def _validate_hamiltonian(cls, value):
+        if isinstance(value, Hamiltonian_Config):
+            return value
+        return Hamiltonian_Config(**value)
+
+    @field_validator("spectrum", mode="before")
+    @classmethod
+    def _validate_spectrum(cls, value):
+        if isinstance(value, Spectrum_Part):
+            return value
+        return Spectrum_Part(**value)
+
     @override
     def setup_excitation_operator(self):
-        return matrix_setup.setup_excitation_operator(initial_config=self)
+        return matrix_setup.setup_excitation_operator(self)
 
 
 @dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
-class Full_Spectrum_Config[Spectrum_Name, Quantum_Numbers](  # noqa: D101 - docstring inherited
-    gc.Full_Spectrum_Config_Base[Spectrum_Name, Quantum_Numbers],
-    Limited_Spectrum_Config[Spectrum_Name, Quantum_Numbers],
+class Full_Spectrum_Config(  # noqa: D101 - docstring inherited
+    gc.Full_Spectrum_Config_Base[Hamiltonian_Config, Spectrum_Part],
+    Limited_Spectrum_Config,
+    Eigenpair_Config,
 ):
-    def __post_init__(self):
-        super().__post_init__()
-        _logger.info(f"Config created:\n{_parse_hamiltonian_kwargs_intro_message(self.hamiltonian)}")
+    # @field_validator("eigenpair", mode="before")
+    # @classmethod
+    # def _validate_eigenpair(cls, value):
+    #     if isinstance(value, Eigenpair_Part):
+    #         return value
+    #     return Eigenpair_Config(**value)
 
     @override
-    def get_spectrum_path(self, operator_name_suffix: str = ""):
+    def get_spectrum_path(self, operator_name_suffix=""):
         system_folder = self.hamiltonian.get_calc_folder()
         folder = system_folder / f"{self.spectrum.name}_spectra"
         suffix = _get_spectrum_figure_suffix(self.hamiltonian, self.spectrum, operator_name_suffix)
@@ -180,7 +247,7 @@ class Position_Shift(gc.Position_Shift_Base):  # noqa: D101 docstring inherited
     rung: Literal[0, 1]
 
 
-class Position_Correlation_Part(gc.Position_Correlation_Part):
+class Position_Correlation_Part(gc.Position_Correlation_Part[Position_Correlation_Name, Position_Shift]):
     """Information necessary calculate a position correlation operator.
 
     fixed_distances: fixed relative shifts between operator terms.
@@ -193,11 +260,39 @@ class Position_Correlation_Part(gc.Position_Correlation_Part):
     num_threads: Setting to None indicates to copy the attribute from hamiltonian config when put into Config.
     """
 
+    @field_validator("name", mode="before")
+    @classmethod
+    def _validate_name(cls, value):
+        if isinstance(value, Position_Correlation_Name):
+            return value
+        return Position_Correlation_Name(value)
+
+    @field_validator("fixed_distances", mode="before")
+    @classmethod
+    def _validate_distances(cls, value):
+        if isinstance(value, Position_Shift):
+            return value
+        return Position_Shift(**value)
+
 
 @dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
 class Limited_Position_Correlation_Config(  # noqa: D101 docstring inherited
     gc.Limited_Position_Correlation_Config_Base[Hamiltonian_Config, Position_Correlation_Name, Position_Shift]
 ):
+    @field_validator("hamiltonian", mode="before")
+    @classmethod
+    def _validate_hamiltonian(cls, value):
+        if isinstance(value, Hamiltonian_Config):
+            return value
+        return Hamiltonian_Config(**value)
+
+    @field_validator("correlations", mode="before")
+    @classmethod
+    def _validate_correlations(cls, value):
+        if isinstance(value, Position_Correlation_Part):
+            return value
+        return Position_Correlation_Part(**value)
+
     @override
     def setup_excitation_operator(self, free_shift):
         """Return callables to set up the excitation operator.
@@ -214,20 +309,28 @@ class Limited_Position_Correlation_Config(  # noqa: D101 docstring inherited
         """
         if self.name != Position_Correlation_Name.SINGLET_SINGLET:
             raise NotImplementedError()  # FIXME: Implement.
-        return matrix_setup.get_position_correlation_operator(initial_config=self, free_shift=free_shift)
+        return matrix_setup.get_position_correlation_operator(self, free_shift)
 
 
 @dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
 class Full_Position_Correlation_Config(  # noqa: D101 - docstring inherited.
     gc.Full_Position_Correlation_Config_Base[Hamiltonian_Config, Position_Correlation_Name, Position_Shift],
     Limited_Position_Correlation_Config,
+    Eigenpair_Config,
 ):
+    # @field_validator("eigenpair", mode="before")
+    # @classmethod
+    # def _validate_eigenpair(cls, value):
+    #     if isinstance(value, Eigenpair_Config):
+    #         return value
+    #     return Eigenpair_Config(**value)
+
     @override
-    def get_spectrum_path(self, operator_name_suffix):
+    def get_spectrum_path(self, operator_name_suffix=""):
         system_folder = self.hamiltonian.get_calc_folder()
-        folder = system_folder / f"{self.spectrum.name}_spectra"
-        suffix = _get_position_correlation_figure_suffix(self.hamiltonian, self.spectrum, operator_name_suffix)
-        path = folder / f"{self.spectrum.name}{suffix}.npz"
+        folder = system_folder / f"{self.correlations.name}_spectra"
+        suffix = _get_position_correlation_figure_suffix(self.hamiltonian, self.correlations, operator_name_suffix)
+        path = folder / f"{self.correlations.name}{suffix}.npz"
         return path
 
 

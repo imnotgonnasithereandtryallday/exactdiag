@@ -19,10 +19,13 @@
         "num_recalculated_vecs_per_iteration": 2
     },
     "spectrum": {
-        "name": "offdiagonal_spectral_function",
+        "name": "offdiagonal_spectral_function_plus",
         "omega_max": 15,
         "omega_min": -15,
-        "operator_symmetry_qs": null,
+        "operator_symmetry_qs": {
+            "leg": 0,
+            "rung": 0
+        },
         "broadening": 5e-2
     }
 }

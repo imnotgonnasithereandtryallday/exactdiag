@@ -63,7 +63,7 @@ def _get_spectral_functions(config: configs.Full_Spectrum_Config):
     if config.hamiltonian.num_holes == 0:
         # We assume the presence of both creation and annihilation spectral functions.
         raise ValueError("The number of holes must be nonzero.")
-    if config.spectrum.name != "spectral_function":
+    if config.spectrum.name not in {"spectral_function_plus", "spectral_function_minus"}:
         raise ValueError("Spectrum name must be 'spectral_function'.")
 
     ws, spectra, info = api.get_spectral_function_spectra(config=config, limited_qs=True)

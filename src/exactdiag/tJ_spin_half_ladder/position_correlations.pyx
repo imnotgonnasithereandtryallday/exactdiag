@@ -111,17 +111,16 @@ def calculate_hole_spin_projection_correlations(Py_State_Translator py_state_tra
 
 def calculate_singlet_singlet_correlations(VALUE_TYPE_t[:] eigvec, Py_Symmetry_Generator symmetries, get_operator):
     cdef size_t num_shifts = symmetries.cpp_shared_ptr.get().get_num_shifts()
-    cdef int[:,:] shifts = np.empty([3,num_shifts], dtype=np.int32)
+    cdef int[:] shifts = np.empty(num_shifts, dtype=np.int32)
     cdef pos_int num_nodes = symmetries.get_basis_length()
     varied_shifts = np.empty([num_nodes,num_shifts], dtype=np.int32)
     cdef int i
     corrs = np.empty(num_nodes)
-    shifts[:2,:] = fixed_distances
     for i in range(num_nodes):
-        symmetries.cpp_shared_ptr.get().get_unit_shifts_from_index(i, &shifts[2,0])
+        symmetries.cpp_shared_ptr.get().get_unit_shifts_from_index(i, &shifts[0])
         operator = get_operator(shifts)
         corrs[i] = np.real(np.vdot(eigvec, operator.dot(eigvec)))
-        varied_shifts[i,:] = shifts[2,:]
+        varied_shifts[i,:] = shifts
     return varied_shifts, corrs
 
 

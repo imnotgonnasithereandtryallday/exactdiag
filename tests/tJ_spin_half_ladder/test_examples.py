@@ -11,7 +11,7 @@ def test_running_examples():
     """All examples should complete successfully."""
     # NOTE: skips .ipynb files.
     files = glob.glob("examples/tJ_spin_half_ladder/*.py")
-    expected_num_files = 7
+    expected_num_files = 8
     assert len(files) == expected_num_files
 
     for i, file in enumerate(files):

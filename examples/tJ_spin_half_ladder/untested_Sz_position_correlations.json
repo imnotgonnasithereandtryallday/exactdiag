@@ -17,7 +17,7 @@
     "eigenpair": {
         "num_eigenpairs": 5
     },
-    "spectrum": {
+    "correlations": {
         "name": "Sz_correlations",
         "fixed_distances": []
     }
