@@ -11,7 +11,7 @@ from exactdiag.tJ_spin_half_ladder import configs
 def run_example(config_file: pathlib.Path | str = None):
     if config_file is None:
         config_file = pathlib.Path(__file__).with_suffix(".json")
-    config = configs.Full_Spectrum_Config.load(config_file)
+    config = configs.Full_Position_Correlation_Config.load(config_file)
     api.plot_position_correlation(config, show=True)
 
 

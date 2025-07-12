@@ -247,6 +247,7 @@ class Position_Shift(gc.Position_Shift_Base):  # noqa: D101 docstring inherited
     rung: Literal[0, 1]
 
 
+@dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
 class Position_Correlation_Part(gc.Position_Correlation_Part[Position_Correlation_Name, Position_Shift]):
     """Information necessary calculate a position correlation operator.
 
@@ -270,9 +271,7 @@ class Position_Correlation_Part(gc.Position_Correlation_Part[Position_Correlatio
     @field_validator("fixed_distances", mode="before")
     @classmethod
     def _validate_distances(cls, value):
-        if isinstance(value, Position_Shift):
-            return value
-        return Position_Shift(**value)
+        return [e if isinstance(e, Position_Shift) else Position_Shift(**e) for e in value]
 
 
 @dataclass(kw_only=True, config={"validate_assignment": True, "extra": "forbid"})
