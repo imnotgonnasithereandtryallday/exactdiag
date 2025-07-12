@@ -11,8 +11,8 @@ import exactdiag.tJ_spin_half_ladder.configs as lc
 def test_against_precalculated():
     """The calculation should reproduce basis sizes previously deemed correct."""
     collected = collect_all()
-    if not collected:
-        assert False
+    expected_num_files = 10
+    assert len(collected) == expected_num_files
     for file in collected:
         pre = Precalculated.load(file)
         config = pre.to_hamiltonian_config()
@@ -45,12 +45,12 @@ def test_inter_symmetry():
 
 
 def collect_all(glob_pattern="*"):
-    folder = pathlib.Path(__file__).parent / "precalculated"
+    folder = pathlib.Path(__file__).parent / "precalculated_basis_size_eigenvalues"
     return glob.glob(f"{(folder / glob_pattern)!s}")
 
 
 def collect(num_rungs: int, num_holes: int, num_down_spins: int):
-    folder = pathlib.Path(__file__).parent / "precalculated"
+    folder = pathlib.Path(__file__).parent / "precalculated_basis_size_eigenvalues"
     mkx = num_rungs // 2
     mky = 2
     collected = []
