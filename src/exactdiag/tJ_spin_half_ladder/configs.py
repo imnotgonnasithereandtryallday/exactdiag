@@ -306,8 +306,6 @@ class Limited_Position_Correlation_Config(  # noqa: D101 docstring inherited
                     and the relative position of the singlet operators is free.
 
         """
-        if self.name != Position_Correlation_Name.SINGLET_SINGLET:
-            raise NotImplementedError()  # FIXME: Implement.
         return matrix_setup.get_position_correlation_operator(self, free_shift)
 
 

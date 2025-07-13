@@ -198,7 +198,6 @@ def setup_excitation_operator(initial_config: "config.Limited_Spectrum_Config"):
     
     The callable, when called, loads matrices if they already exist or calculates and saves them.
     """
-    # FIXME: separate position correlations
 
     num_rungs = initial_config.hamiltonian.num_rungs
     num_holes = initial_config.hamiltonian.num_holes 
@@ -404,7 +403,7 @@ def py_get_ladder_translators(config: "config.Hamiltonian_Config"
     py_basis.cpp_shared_ptr = get_basis_map(file_path, num_hole_only_states, 
                                py_trans.cpp_shared_ptr.get()[0], config.num_threads)
     _logger.debug(f"Finished calculating translators with {config}.")
-    return py_trans, py_basis, py_sym
+    return py_trans, py_basis, py_sym  # TODO: TO struct.
 
 
 def get_position_correlation_operator(config: "configs.Limited_Position_Correlation_Config", free_shift: "configs.Position_Shift"):
@@ -432,44 +431,60 @@ def get_position_correlation_operator(config: "configs.Limited_Position_Correlat
     cdef vector[vector[VALUE_TYPE_t]] combination_weights
 
 
-    if config.correlations.name != 'singlet-singlet':
-        raise ValueError(f"Unsupported operator {config.correlations.name}")
-
-    # singlet-singlet: \Delta_i^\dagger (y)  \Delta_j (x)
-    # \Delta_i (x) = 1/sqrt(2) * (c_{i \uparrow} c_{i+x \downarrow} - c_{i \downarrow} c_{i+x \uparrow})
     fixed_distances = np.array([shift.to_npint32() for shift in config.correlations.fixed_distances] + [free_shift.to_npint32()], dtype=np.int32)
-    # fixed_distances = separation in [creation singlet, annihilation singlet, between singlets]
-    #                   given by shifts [rung, leg]
-    #                = shifts corresponding to  [y, x, j-i]
+    if config.correlations.name == configs.Position_Correlation_Name.SINGLET_SINGLET:
+        # singlet-singlet: \Delta_i^\dagger (y)  \Delta_j (x)
+        # \Delta_i (x) = 1/sqrt(2) * (c_{i \uparrow} c_{i+x \downarrow} - c_{i \downarrow} c_{i+x \uparrow})
+        # fixed_distances = separation in [creation singlet, annihilation singlet, between singlets]
+        #                   given by shifts [rung, leg]
+        #                = shifts corresponding to  [y, x, j-i]
 
-    # The annihilation part \Delta_j (x) is given by just one combination of two shifts
-    # corresponding to j, j+x. Both combinations of sign and spins are taken into account in 
-    # the get_weights_annihilation_part_singlet_singlet function.
+        # The annihilation part \Delta_j (x) is given by just one combination of two shifts
+        # corresponding to j, j+x. Both combinations of sign and spins are taken into account in
+        # the get_weights_annihilation_part_singlet_singlet function.
 
-    # The startpoint i and the first shift in the first element of endpoint_shifts creates
-    # c_{i \downarrow}^\dagger c_{i+y \uparrow}^\dagger
-    # which corresponds to the second term in \Delta_i^\dagger(y)
-    # (the anticommutation cancels the sign)
+        # The startpoint i and the first shift in the first element of endpoint_shifts creates
+        # c_{i \downarrow}^\dagger c_{i+y \uparrow}^\dagger
+        # which corresponds to the second term in \Delta_i^\dagger(y)
+        # (the anticommutation cancels the sign)
 
-    # The startpoint i and the first shift in the second element of endpoint_shifts creates
-    # c_{i \downarrow}^\dagger c_{i-y \uparrow}^\dagger
-    # which corresponds to the first term in \Delta_{i-y}^\dagger(y) 
-    # Therefore, the other shifts are also adjusted. 
-    startpoints = [i for i in range(num_nodes)]
-    startpoints_weights = np.array([(0,0.5/num_nodes)]*num_nodes)
-    endpoint_shifts = np.array([(fixed_distances[0], fixed_distances[2], fixed_distances[1] + fixed_distances[2]), \
-                        (-fixed_distances[0], fixed_distances[2] - fixed_distances[0], fixed_distances[1] + fixed_distances[2] - fixed_distances[0])])
-    endpoint_weights = np.array([(0,1)]*endpoint_shifts.shape[0])
-    operator_index_combinations, combination_weights = combinations_from_start_end_points( \
-                            startpoints, endpoint_shifts, startpoints_weights, endpoint_weights, \
-                            py_symmetries, reverse=False)
-    max_num_values_per_column = 4*num_spins 
-    get_anticommutation = get_anticommutation_sign
-    is_valid_indices = NULL
-    is_valid_state = is_valid_state_unequal_spins_2holes
-    generate_new_state = remove_two_add_up_down
-    calculate_weights = get_weights_annihilation_part_singlet_singlet
-    commutes_with_symmetries = True
+        # The startpoint i and the first shift in the second element of endpoint_shifts creates
+        # c_{i \downarrow}^\dagger c_{i-y \uparrow}^\dagger
+        # which corresponds to the first term in \Delta_{i-y}^\dagger(y)
+        # Therefore, the other shifts are also adjusted.
+        startpoints = [i for i in range(num_nodes)]
+        startpoints_weights = np.array([(0,0.5/num_nodes)]*num_nodes)
+        endpoint_shifts = np.array([(fixed_distances[0], fixed_distances[2], fixed_distances[1] + fixed_distances[2]), \
+                            (-fixed_distances[0], fixed_distances[2] - fixed_distances[0], fixed_distances[1] + fixed_distances[2] - fixed_distances[0])])
+        endpoint_weights = np.array([(0,1)]*endpoint_shifts.shape[0])
+        operator_index_combinations, combination_weights = combinations_from_start_end_points( \
+                                startpoints, endpoint_shifts, startpoints_weights, endpoint_weights, \
+                                py_symmetries, reverse=False)
+        max_num_values_per_column = 4*num_spins
+        get_anticommutation = get_anticommutation_sign
+        is_valid_indices = NULL
+        is_valid_state = is_valid_state_unequal_spins_2holes
+        generate_new_state = remove_two_add_up_down
+        calculate_weights = get_weights_annihilation_part_singlet_singlet
+        commutes_with_symmetries = True
+    elif config.correlations.name in {configs.Position_Correlation_Name.HOLE_CORRELATIONS, configs.Position_Correlation_Name.SZ_CORRELATIONS}:
+        is_hole = config.correlations.name == configs.Position_Correlation_Name.HOLE_CORRELATIONS
+        startpoints = [i for i in range(num_nodes)]
+        startpoints_weights = np.array([(1,0)]*num_nodes)
+        endpoint_shifts = np.array([fixed_distances])
+        endpoint_weights = np.array([(1,0)]*endpoint_shifts.shape[0])
+        operator_index_combinations, combination_weights = combinations_from_start_end_points( \
+                                startpoints, endpoint_shifts, startpoints_weights, endpoint_weights, \
+                                py_symmetries, reverse=False)
+        max_num_values_per_column = 1
+        get_anticommutation = NULL
+        is_valid_indices = NULL
+        is_valid_state = is_valid_state_all_holes if is_hole else is_valid_state_no_holes
+        generate_new_state = NULL
+        calculate_weights = <calculate_weights_type*> NULL if is_hole else get_weights_spin_projection
+        commutes_with_symmetries = True
+    else:
+        raise ValueError(f"Unsupported operator {config.correlations.name}")
 
     get_excited_H = config.hamiltonian.setup()
 

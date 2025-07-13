@@ -269,6 +269,11 @@ class Limited_Position_Correlation_Config_Base[Hamiltonian_co, Name, Position_Sh
 
         """
 
+    @model_validator(mode="after")
+    def __fill_in_num_threads(self):
+        if self.correlations.num_threads is None:
+            self.correlations.num_threads = self.hamiltonian.num_threads
+        return self
 
 @dataclass(kw_only=True)#, config={"validate_assignment": True, "extra": "forbid"})
 class Full_Position_Correlation_Config_Base[Hamiltonian_co, Name, Position_Shift_co](
