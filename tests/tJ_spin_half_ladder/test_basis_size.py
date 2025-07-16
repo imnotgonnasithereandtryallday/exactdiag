@@ -1,9 +1,11 @@
-import pathlib
-import json
 import glob
+import itertools
+import json
+import pathlib
 from typing import Self
-from pydantic.dataclasses import dataclass
 
+from pydantic.dataclasses import dataclass
+import scipy.special
 
 import exactdiag.tJ_spin_half_ladder.configs as lc
 
@@ -11,7 +13,7 @@ import exactdiag.tJ_spin_half_ladder.configs as lc
 def test_against_precalculated():
     """The calculation should reproduce basis sizes previously deemed correct."""
     collected = collect_all()
-    expected_num_files = 10
+    expected_num_files = 68
     assert len(collected) == expected_num_files
     for file in collected:
         pre = Precalculated.load(file)
@@ -20,23 +22,98 @@ def test_against_precalculated():
         assert pre.basis_size == py_basis_map.get_num_states(), (file, pre.basis_size, py_basis_map.get_num_states())
 
 
-def test_negative_k():
-    pass
+def test_negative_k_leg():
+    """Basis size should be the same for k as for (-k[0], k[1])."""
+    # The system chosen to have varied number of states for different momenta.
+    collected = collect(num_rungs=6, num_holes=0, num_down_spins=6)
+    expected_num_files = 8
+    assert len(collected) == expected_num_files
+    for params in collected:
+        k = params.symmetry_qs
+        if k[0] == 0:
+            continue
+        config = params.to_hamiltonian_config()
+        config.symmetry_qs.leg *= -1
+        _, py_basis_map, _ = config.get_translators()
+        assert py_basis_map.get_num_states() == params.basis_size
+
+
+def test_k_leg_periodicity():
+    """Basis size should remain the same when shifting k by a multiple of its periodicity."""
+    # NOTE: We do not test config.symmetry_qs.rung, as that is validated to be in {0, 1}.
+    # The system chosen to have varied number of states for different momenta.
+    collected = collect(num_rungs=6, num_holes=0, num_down_spins=6)
+    expected_num_files = 8
+    assert len(collected) == expected_num_files
+    multiples = range(-4, 5)
+    for params in collected:
+        k = params.symmetry_qs
+        if k == (0, 0):
+            continue
+        config = params.to_hamiltonian_config()
+        periodicities = tuple(config.periodicities)
+        for leg_multiple in multiples:
+            config.symmetry_qs.leg = k[0] + leg_multiple * periodicities[0]
+            _, py_basis_map, _ = config.get_translators()
+            assert py_basis_map.get_num_states() == params.basis_size
 
 
 def test_sum_over_k():
-    pass
+    """Summed number of states should give values calculated using combinatorics."""
+    # NOTE: We test the saved files, nothing is calculated.
+    # We assume that there are no files with negative or reducible momenta.
+    # Counting negative momenta: all our files contribute twice except
+    # those with k_leg == 0 or (k_leg == num_rungs//2 if num_rungs is even).
+    collected = collect_all()
+    rungs_holes_down_to_pre = {}
+    for fpath in collected:
+        pre = Precalculated.load(fpath)
+        rungs_holes_down = (pre.num_rungs, pre.num_holes, pre.num_down_spins)
+        if rungs_holes_down not in rungs_holes_down_to_pre:
+            rungs_holes_down_to_pre[rungs_holes_down] = []
+        multiplier = 1 + (pre.symmetry_qs[0] != 0 and (pre.symmetry_qs[0] != pre.num_rungs // 2 or pre.num_rungs % 2))
+        rungs_holes_down_to_pre[rungs_holes_down].append(multiplier * pre.basis_size)
 
-
-def test_sum_over_holes():
-    pass
+    rungs_holes_down_to_pre = {
+        k: sizes for k, sizes in rungs_holes_down_to_pre.items() if len(sizes) == 2 * (k[0] // 2 + 1)
+    }
+    expected_num_sets = 7
+    assert len(rungs_holes_down_to_pre) == expected_num_sets
+    for (num_rungs, num_holes, num_down_spins), sizes in rungs_holes_down_to_pre.items():
+        num_spin_states = scipy.special.comb(2 * num_rungs - num_holes, num_down_spins, exact=True)
+        num_hole_states = scipy.special.comb(2 * num_rungs, num_holes, exact=True)
+        assert num_spin_states * num_hole_states == sum(sizes)
 
 
 def test_sum_over_down_spins():
-    pass
+    """Summed number of states should give values calculated using combinatorics."""
+    num_rungs = 6  # Selected arbitrarily.
+    num_nodes = 2 * num_rungs
+    config = lc.Hamiltonian_Config(
+        num_rungs=num_rungs,
+        num_holes=0,
+        weights=lc.Weights(tl=1, tr=1, jl=1, jr=1),  # Not used in this test.
+        symmetry_qs=lc.Quantum_Numbers(leg=0, rung=0),
+        num_threads=1
+    )
+    for num_holes in range(num_nodes + 1):
+        config.num_holes = num_holes
+        summed_num_states = 0
+        for num_down_spins in range(num_nodes - num_holes + 1):
+            config.total_spin_projection = num_nodes - num_holes - 2 * num_down_spins
+            for kx, ky in itertools.product(range(num_rungs//2+1), range(2)):
+                multiplier = 1 + (kx != 0 and (kx != num_rungs // 2 or num_rungs % 2))
+                config.symmetry_qs.leg = kx
+                config.symmetry_qs.rung = ky
+                _, py_basis_map, _ = config.get_translators()
+                summed_num_states += multiplier * py_basis_map.get_num_states()
+        expected_num_spin_states = 2 ** (num_nodes - num_holes)
+        expected_num_hole_states = scipy.special.comb(num_nodes, num_holes)
+        expected_sum = expected_num_spin_states * expected_num_hole_states
+        assert summed_num_states == expected_sum, num_holes
 
 
-def test_equivalent_systems():
+def test_equivalent_symmetries():
     pass
 
 
@@ -45,13 +122,14 @@ def test_inter_symmetry():
 
 
 def collect_all(glob_pattern="*"):
+    # FIXME: Shares name with collect() but the return type differs.
     folder = pathlib.Path(__file__).parent / "precalculated_basis_size_eigenvalues"
     return glob.glob(f"{(folder / glob_pattern)!s}")
 
 
 def collect(num_rungs: int, num_holes: int, num_down_spins: int):
     folder = pathlib.Path(__file__).parent / "precalculated_basis_size_eigenvalues"
-    mkx = num_rungs // 2
+    mkx = num_rungs // 2 + 1
     mky = 2
     collected = []
     for kx in range(mkx):

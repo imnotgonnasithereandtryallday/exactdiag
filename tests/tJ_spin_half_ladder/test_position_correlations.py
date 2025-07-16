@@ -16,7 +16,7 @@ import exactdiag.tJ_spin_half_ladder.configs as lc
 def test_hole_correlations_against_precalculated_paulina():
     """Calculated 2-hole correlations should match values in Paulina's dissertation."""
     # NOTE: Paulina has the values for 9 rungs and 2 holes wrong: the probabilities do not even add up to 1.
-    folder = pathlib.Path(__file__).parent / "precalculated"
+    folder = pathlib.Path(__file__).parent / "precalculated_position_correlations"
     diffs = _get_correlation_diffs(folder / "hole_correlations_paulina.txt", normalize=True)
     listed_precision = 1e-3
     assert all([np.all(np.abs(diff) < listed_precision) for diff in diffs])
@@ -24,7 +24,7 @@ def test_hole_correlations_against_precalculated_paulina():
 
 def test_hole_correlations_against_precalculated_scco():
     """Calculated 2- and 3-hole correlations should match values in hte SCCO paper."""
-    folder = pathlib.Path(__file__).parent / "precalculated"
+    folder = pathlib.Path(__file__).parent / "precalculated_position_correlations"
     diffs = _get_correlation_diffs(folder / "hole_correlations_scco.txt", normalize=True)
     listed_precision = 1e-3
     passed = [np.all(np.abs(diff) < listed_precision) for diff in diffs]
@@ -55,7 +55,7 @@ def _get_correlation_diffs(path: pathlib.Path, normalize: bool) -> list[np.ndarr
 def test_singlet_singlet_correlations_against_precalculated():
     """Calculated singlet-singlet correlations should match values published in my dissertation."""
     # NOTE: Takes around 15 minutes on my pc.
-    folder = pathlib.Path(__file__).parent / "precalculated"
+    folder = pathlib.Path(__file__).parent / "precalculated_position_correlations"
     diffs = _get_correlation_diffs(folder / "singlet_correlations_scco.txt", normalize=False)
     listed_precision = 1e-3
     passed = [np.all(np.abs(diff) < listed_precision) for diff in diffs]
