@@ -121,14 +121,14 @@ def test_inter_symmetry():
     """General and specialized symmetries should give the same basis sizes."""
 
 
-def collect_all():
+def collect_all(glob_pattern="*"):
     # FIXME: Shares name with collect() but the return type differs.
-    folder = pathlib.Path(__file__).parent / "precalculated"
-    return glob.glob(f"{(folder / '*')!s}")
+    folder = pathlib.Path(__file__).parent / "precalculated_basis_size_eigenvalues"
+    return glob.glob(f"{(folder / glob_pattern)!s}")
 
 
 def collect(num_rungs: int, num_holes: int, num_down_spins: int):
-    folder = pathlib.Path(__file__).parent / "precalculated"
+    folder = pathlib.Path(__file__).parent / "precalculated_basis_size_eigenvalues"
     mkx = num_rungs // 2 + 1
     mky = 2
     collected = []
@@ -169,13 +169,11 @@ class Precalculated:
             total_spin_projection=total_spin_projection,
         )
 
-    def to_he_config(self) -> lc.Config:
-        h_config = self.to_hamiltonian_config()
-        e_config = lc.Eigenpair_Config(
-            num_eigenpairs=len(self.eigvals),
-            num_threads=10,
-        )
-        return lc.Config(
-            hamiltonian=h_config,
-            eigenpair=e_config,
+    def to_he_config(self) -> lc.Full_Spectrum_Config:
+        return lc.Eigenpair_Config(
+            hamiltonian=self.to_hamiltonian_config(),
+            eigenpair={
+                "num_eigenpairs": len(self.eigvals),
+                "num_threads": 10,
+            },
         )

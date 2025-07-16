@@ -11,18 +11,8 @@ from exactdiag.tJ_spin_half_ladder import configs
 def run_example(config_file: pathlib.Path | str = None):
     if config_file is None:
         config_file = pathlib.Path(__file__).with_suffix(".json")
-    config = configs.Full_Spectrum_Config.load(config_file)
-
-    omega_mins = {
-        "current_rung": 0,  # Note: this may not plot what you would expect and logs a warning.
-        "current_leg": -0.5,  # Calculating negative values allows us to suppres an un-physical peak at 0 energy.
-        "Szq": 0,  # Note: this logs a warning.
-        "spectral_function_plus": -2,  # Note: not only the plus part is comuted.
-    }
-    for name, omega_min in omega_mins.items():
-        config.spectrum.name = name
-        config.spectrum.omega_min = omega_min
-        api.plot_excitation_spectrum(config=config, show=True, limited_qs=False)
+    config = configs.Full_Position_Correlation_Config.load(config_file)
+    api.plot_position_correlation(config, show=True)
 
 
 if __name__ == "__main__":

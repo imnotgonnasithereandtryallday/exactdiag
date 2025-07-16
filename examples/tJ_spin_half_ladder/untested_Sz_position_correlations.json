@@ -1,7 +1,7 @@
 {
     "hamiltonian": {
-        "num_rungs": 7,
-        "num_holes": 1,
+        "num_rungs": 8,
+        "num_holes": 2,
         "weights": {
             "tl": 0.45,
             "tr": 0.36,
@@ -9,7 +9,7 @@
             "jr": 0.12
         },
         "symmetry_qs": {
-            "leg": 2,
+            "leg": 4,
             "rung": 0
         },
         "num_threads": 8
@@ -17,13 +17,8 @@
     "eigenpair": {
         "num_eigenpairs": 5
     },
-    "spectrum": {
-        "name": "current_rung",
-        "omega_max": 3,
-        "operator_symmetry_qs": {
-            "leg": 0,
-            "rung": 0
-        },
-        "broadening": 1e-2
+    "correlations": {
+        "name": "Sz_correlations",
+        "fixed_distances": []
     }
 }

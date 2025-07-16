@@ -1,6 +1,6 @@
 {
     "hamiltonian": {
-        "num_rungs": 12,
+        "num_rungs": 8,
         "num_holes": 4,
         "weights": {
             "tl": 1,
@@ -19,10 +19,13 @@
         "num_recalculated_vecs_per_iteration": 2
     },
     "spectrum": {
-        "name": "offdiagonal_spectral_function",
-        "omega_max": 1,
-        "omega_min": -1,
-        "operator_symmetry_qs": null,
+        "name": "offdiagonal_spectral_function_plus",
+        "omega_max": 15,
+        "omega_min": -15,
+        "operator_symmetry_qs": {
+            "leg": 0,
+            "rung": 0
+        },
         "broadening": 5e-2
     }
 }
