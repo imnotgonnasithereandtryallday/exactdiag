@@ -361,7 +361,7 @@ def calculate_excited_state_properties(
         h_matrices = load_hamiltonian_matrices(config.hamiltonian)
         _, gs_tl, gs_tr, gs_jl, gs_jr, gs_t, gs_j, gs_l, gs_r = calculate_values(gs, gs, h_matrices, hpar)
 
-        for pm, pms in enumerate(["plus", "minus"]):
+        for pm, pms in enumerate(["minus", "plus"]):
             # "plus" means calculating a spectral function that adds an electron.
             for qx in range(num_kx):
                 for qy in range(num_ky):
@@ -373,13 +373,11 @@ def calculate_excited_state_properties(
                     exc_op = load_spec_func_matrix(config, pms)
                     exc_state = exc_op.dot(gs)
                     new_num_holes = config.hamiltonian.num_holes + (-1 if pms == "plus" else 1)
-                    # Since the gs has k=[0,0], we also do not need to care whether
-                    # it should be -qx, -qy for one of the spectral functions.
                     mutate_hamiltonian_config(
                         excited_config.hamiltonian,
                         j_to_t=j_to_t,
                         num_holes=new_num_holes,
-                        ks=[qx, qy],
+                        ks=[config.spectrum.operator_symmetry_qs.leg, qy],
                     )
                     eigvals, eigvecs = api.get_eigenpairs(excited_config)
                     h_matrices = load_hamiltonian_matrices(excited_config.hamiltonian)

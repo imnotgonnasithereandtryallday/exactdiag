@@ -9,8 +9,8 @@ cdef object np_pos_int = np.int16
 cdef object np_state_int = np.int16
 
 cdef state_int HOLE_VALUE = 0
-cdef state_int SPIN_UP_VALUE = 1
-cdef state_int SPIN_DOWN_VALUE = 2
+cdef state_int SPIN_DOWN_VALUE = 1
+cdef state_int SPIN_UP_VALUE = 2
 
 cdef state_int OCCUPIED_VALUE = 1
 cdef state_int EMPTY_VALUE = 0
