@@ -26,14 +26,15 @@ def mutate_hamiltonian_config(config: configs.Hamiltonian_Config, j_to_t=None, n
         config.symmetry_qs.rung = ks[1]
 
 
-def calculate_values(excited_state, eigenstate_for_projection, hamiltonain_matrices, hpar):
+def calculate_values(excited_state, eigenstate_for_projection, hamiltonain_matrices):
     projected_state = eigenstate_for_projection * np.vdot(eigenstate_for_projection, excited_state)
     projected_norm = np.linalg.norm(projected_state)
     projected_state /= projected_norm
-    tl_state = hpar[0] * hamiltonain_matrices[0].dot(projected_state)
-    tr_state = hpar[1] * hamiltonain_matrices[1].dot(projected_state)
-    jl_state = hpar[2] * hamiltonain_matrices[2].dot(projected_state)
-    jr_state = hpar[3] * hamiltonain_matrices[3].dot(projected_state)
+    h_mats = {m.name: (m, w) for m, w in zip(hamiltonain_matrices.refs, hamiltonain_matrices.weights)}
+    tl_state = h_mats["tl"][1] * h_mats["tl"][0].dot(projected_state)
+    tr_state = h_mats["tr"][1] * h_mats["tr"][0].dot(projected_state)
+    jl_state = h_mats["jl"][1] * h_mats["jl"][0].dot(projected_state)
+    jr_state = h_mats["jr"][1] * h_mats["jr"][0].dot(projected_state)
     tl_contr = np.vdot(projected_state, tl_state).astype(float)
     tr_contr = np.vdot(projected_state, tr_state).astype(float)
     jl_contr = np.vdot(projected_state, jl_state).astype(float)
@@ -43,24 +44,6 @@ def calculate_values(excited_state, eigenstate_for_projection, hamiltonain_matri
     l_contr = np.vdot(projected_state, tl_state + jl_state).astype(float)
     r_contr = np.vdot(projected_state, tr_state + jr_state).astype(float)
     return projected_norm, tl_contr, tr_contr, jl_contr, jr_contr, t_contr, j_contr, l_contr, r_contr
-
-
-def load_hamiltonian_matrices(
-    config: configs.Hamiltonian_Config,
-) -> tuple[Sparse_Matrix, Sparse_Matrix, Sparse_Matrix, Sparse_Matrix]:
-    tl_matrix = Sparse_Matrix.from_name(name="tl", config=config)
-    tr_matrix = Sparse_Matrix.from_name(name="tr", config=config)
-    jl_matrix = Sparse_Matrix.from_name(name="jl", config=config)
-    jr_matrix = Sparse_Matrix.from_name(name="jr", config=config)
-    return tl_matrix, tr_matrix, jl_matrix, jr_matrix
-
-
-def load_spec_func_matrix(config: configs.Full_Spectrum_Config, pm: Literal["plus", "minus"]) -> Sparse_Matrix:
-    # originally 'plus' if pm else 'minus'
-    if config.spectrum.operator_symmetry_qs is None:
-        raise ValueError("config.spectrum.operator_symmetry_qs must not be None.")
-    matrix_name = f"spectral_function_{pm}_{config.spectrum.operator_symmetry_qs.to_npint32()}"
-    return Sparse_Matrix.from_name(name=matrix_name, num_threads=config.spectrum.num_threads, config=config.hamiltonian)
 
 
 def get_shift(dj: float, qx: int, qy: int, mkx: int) -> float:
@@ -178,11 +161,10 @@ def select_q_combinations_forming_gap(j_to_ts, energies, gap_proximity_factor):
                 pairs[:, :, qy, qpy, exc1, exc2] = is_low
     return important_qs, pairs
 
-def plot_pair_observable(
-    x, y, pairs, mkx, mky, num_excited, ylim=None, is_multiplied=True, ylabel="", converge=False
-):
+
+def plot_pair_observable(x, y, pairs, mkx, mky, num_excited, ylim=None, is_multiplied=True, ylabel="", converge=False):
     markers = ["o", "s", "*", "v"]
-    cs = [f"C{qx%10}" for qx in range(mkx)]
+    cs = [f"C{qx % 10}" for qx in range(mkx)]
     dj = 0.1  # (j_to_ts[1]-j_to_ts[0])
     plt.gcf().set_size_inches([15, 4])
     for ix, v in enumerate(x):
@@ -195,7 +177,7 @@ def plot_pair_observable(
                             plt.plot(
                                 [v + shift],
                                 (y[ix, 0, qx, qy, exc1] * y[ix, 1, qx, qpy, exc2]),
-                                marker=markers[(exc1 + exc2)%len(markers)],
+                                marker=markers[(exc1 + exc2) % len(markers)],
                                 c=cs[qx],
                                 lw=0,
                                 ms=6,
@@ -204,7 +186,7 @@ def plot_pair_observable(
                             plt.plot(
                                 [v + shift],
                                 (y[ix, 0, qx, qy, exc1] + y[ix, 1, qx, qpy, exc2]),
-                                marker=markers[(exc1 + exc2)%len(markers)],
+                                marker=markers[(exc1 + exc2) % len(markers)],
                                 c=cs[qx],
                                 lw=0,
                                 ms=6,
@@ -337,7 +319,7 @@ def calculate_excited_state_properties(
     config = copy.deepcopy(config)
     excited_config = copy.deepcopy(config)
     # for gs with k=[0,0], we do not need to calculate all momenta due to symmetry.
-    num_kx, num_ky = config.hamiltonian.num_rungs//2 + 1, 2
+    num_kx, num_ky = config.hamiltonian.num_rungs // 2 + 1, 2
     shape = [len(j_to_ts), 2, num_kx, num_ky, num_excited_states]
     tl_conts = np.empty(shape)
     tr_conts = np.empty(shape)
@@ -353,16 +335,16 @@ def calculate_excited_state_properties(
     qualified_print(datetime.now(), "start")
     for ij, j_to_t in enumerate(j_to_ts):
         mutate_hamiltonian_config(config.hamiltonian, j_to_t=j_to_t)
-        hpar = [1, 1, j_to_t, j_to_t]
         eigvals, eigvecs = api.get_eigenpairs(config)
-        qualified_print(datetime.now(), f"eigenvalues for {hpar} got.")
+        qualified_print(datetime.now(), f"eigenvalues for J/t={j_to_t} got.")
         gs = eigvecs[:, 0]
         gs_en = eigvals[0]
-        h_matrices = load_hamiltonian_matrices(config.hamiltonian)
-        _, gs_tl, gs_tr, gs_jl, gs_jr, gs_t, gs_j, gs_l, gs_r = calculate_values(gs, gs, h_matrices, hpar)
+        h_matrices = config.hamiltonian.setup()()
+        _, gs_tl, gs_tr, gs_jl, gs_jr, gs_t, gs_j, gs_l, gs_r = calculate_values(gs, gs, h_matrices)
 
-        for pm, pms in enumerate(["plus", "minus"]):
+        for pm, pms in enumerate(["minus", "plus"]):
             # "plus" means calculating a spectral function that adds an electron.
+            config.spectrum.name = f"spectral_function_{pms}"
             for qx in range(num_kx):
                 for qy in range(num_ky):
                     config.spectrum.operator_symmetry_qs = copy.deepcopy(
@@ -370,19 +352,11 @@ def calculate_excited_state_properties(
                     )  # Ugly hack to avoid having None there.
                     config.spectrum.operator_symmetry_qs.leg = qx if pms == "plus" else -qx
                     config.spectrum.operator_symmetry_qs.rung = qy
-                    exc_op = load_spec_func_matrix(config, pms)
+                    op_getter, excited_config.hamiltonian, _ = config.setup_excitation_operator()
+                    exc_op = op_getter()
                     exc_state = exc_op.dot(gs)
-                    new_num_holes = config.hamiltonian.num_holes + (-1 if pms == "plus" else 1)
-                    # Since the gs has k=[0,0], we also do not need to care whether
-                    # it should be -qx, -qy for one of the spectral functions.
-                    mutate_hamiltonian_config(
-                        excited_config.hamiltonian,
-                        j_to_t=j_to_t,
-                        num_holes=new_num_holes,
-                        ks=[qx, qy],
-                    )
                     eigvals, eigvecs = api.get_eigenpairs(excited_config)
-                    h_matrices = load_hamiltonian_matrices(excited_config.hamiltonian)
+                    h_matrices = excited_config.hamiltonian.setup()()
                     for exc_i in range(num_excited_states):
                         i = (ij, pm, qx, qy, exc_i)
                         energies[i] = eigvals[exc_i] - gs_en
@@ -397,7 +371,7 @@ def calculate_excited_state_properties(
                             j_conts[i],
                             l_conts[i],
                             r_conts[i],
-                        ) = calculate_values(exc_state, eigenstate_for_projection, h_matrices, hpar)
+                        ) = calculate_values(exc_state, eigenstate_for_projection, h_matrices)
                         tl_conts[i] -= gs_tl
                         tr_conts[i] -= gs_tr
                         jl_conts[i] -= gs_jl
