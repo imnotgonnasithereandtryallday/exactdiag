@@ -167,12 +167,12 @@ def _get_config(num_rungs, num_holes, spectrum_name, weights, state_symmetry_qs,
         num_rungs=num_rungs, num_holes=num_holes, num_threads=num_threads,
         weights=weights, symmetry_qs=state_symmetry_qs,
     )
-    eigenpair = lc.Eigenpair_Config(
+    eigenpair = lc.Eigenpair_Part(
         num_eigenpairs=5, num_threads=num_threads,
     )
     if operator_symmetry_qs is not None:
         operator_symmetry_qs = {"leg": operator_symmetry_qs[0], "rung": operator_symmetry_qs[1]}
-    spectrum = lc.Spectrum_Config(
+    spectrum = lc.Spectrum_Part(
         name=spectrum_name, omega_max=omega_max, operator_symmetry_qs=operator_symmetry_qs, broadening=5e-2, num_threads=num_threads
     )
-    return lc.Config(hamiltonian=hamiltonian, eigenpair=eigenpair, spectrum=spectrum)
+    return lc.Full_Spectrum_Config(hamiltonian=hamiltonian, eigenpair=eigenpair, spectrum=spectrum)

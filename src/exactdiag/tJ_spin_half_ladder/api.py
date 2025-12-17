@@ -1,11 +1,13 @@
 from itertools import product
 import logging
 import copy
+import pathlib
+import typing
 
 import numpy as np
+from pydantic import field_validator
 from pydantic.dataclasses import dataclass, Field
 
-from exactdiag.tJ_spin_half_ladder.configs import Config
 from exactdiag.general.lanczos_diagonalization import (
     get_lowest_eigenpairs,
     get_spectrum,
@@ -13,21 +15,26 @@ from exactdiag.general.lanczos_diagonalization import (
     Eigenvalues,
     Eigenvectors,
 )
+from exactdiag.tJ_spin_half_ladder import position_correlations
+from exactdiag.tJ_spin_half_ladder import configs
 from exactdiag.plotting import choose_plot
 
 
 _logger = logging.getLogger(__name__)
 
-type IntSymmetryQs = tuple[int, int]
+
+class IntSymmetryQs(typing.NamedTuple):
+    """Symmetry quantum numbers as named tuple."""
+
+    leg: int
+    rung: typing.Literal[0, 1]
 
 
 def get_eigenpairs(
-    config: Config,
-) -> dict[IntSymmetryQs, tuple[Eigenvalues, Eigenvectors]] | tuple[Eigenvalues, Eigenvectors]:
+    config: configs.Eigenpair_Config,
+) -> tuple[Eigenvalues, Eigenvectors]:
     """Return eigevalues and eigenvectors.
 
-    If `hamiltonian.symmetry_qs` is `None`, return a dictionary mapping
-    `symmetry_qs` as tuple of ints to a tuple of `(Eigenvalues, Eigenvectors)`.
     `eigenvectors[i, j]` is the `i`-th component of the `j`-th eigenvector which corresponds to `eigenvalues[j]`.
     """
     if config.hamiltonian.symmetry_qs is None:
@@ -35,11 +42,10 @@ def get_eigenpairs(
     return get_lowest_eigenpairs(config)
 
 
-def get_all_k_eigenpairs(config: Config) -> dict[IntSymmetryQs, tuple[Eigenvalues, Eigenvectors]]:
-    """Return eigenvalues and eigenvectors for all unique `symmetry_qs`.
+def get_all_k_eigenpairs(config: configs.Eigenpair_Config) -> dict[IntSymmetryQs, tuple[Eigenvalues, Eigenvectors]]:
+    """Return a map from all unique `symmetry_qs` to corresponding eigenvalues and eigenvectors.
 
-    If `hamiltonian.symmetry_qs` is None, the return is the same as that of `get_eigenpairs`,
-    but here, the semantics of the return value does not change when `symmetry_qs` is specified.
+    The values are as described in `get_eigenpairs`.
     """
     mut_config = copy.deepcopy(config)
     mkx = config.hamiltonian.num_rungs // 2 + 1
@@ -59,48 +65,55 @@ class Spectrum:
     # TODO: return from more functions // make staticmethod?
     ws: np.ndarray
     spectrum: np.ndarray
-    config: Config
+    config: configs.Full_Spectrum_Config | configs.Full_Position_Correlation_Config
     info: dict = Field(default_factory=dict)
 
+    @field_validator("ws", "spectrum", mode="before")
+    @classmethod
+    def _validate_ndarray(cls, value):
+        return np.array(value)
 
-def get_excitation_spectrum(config: Config, limited_qs: bool = True) -> Spectrum:
-    """Return the spectrum specified in the config."""
-    config = copy.deepcopy(config)
+    def get_figure_path(self, operator_name_suffix: str = "") -> pathlib.Path:
+        data_path = self.config.get_spectrum_path(operator_name_suffix)
+        rel_path = data_path.parents[1].relative_to(self.config.hamiltonian.get_calc_folder())
+        figure_path = self.config.hamiltonian.get_figures_folder() / rel_path / f"{data_path.stem}.pdf"
+        return figure_path
 
+
+def get_excitation_spectrum(config: configs.Full_Spectrum_Config, limited_qs: bool = True) -> Spectrum:
+    """Return the spectrum specified in the config.
+
+    More that the config specifies is computed for most operators.
+    """
+    # TODO: This calculation of mupltiple spectra from one config needs to be handled better.
     base_name = config.spectrum.name
     info = {}
     if base_name in {"current_rung", "current_leg"}:
-        if config.spectrum.operator_symmetry_qs is None:
-            _logger.warning(
-                "Current operator does not currently support operator_symmetry_qs=None. Continuing with (0,0)."
-            )
         ws, spectrum = get_spectrum(config=config)
     elif base_name == "Szq":
         ws, spectrum, info = get_Szq_spectra(config=config, limited_qs=limited_qs)
-    elif base_name == "spectral_function":
+    elif base_name in {"spectral_function_plus", "spectral_function_minus"}:
         ws, spectrum, info = get_spectral_function_spectra(config=config, limited_qs=limited_qs)
-    elif base_name in {"offdiag_spec_func", "offdiagonal_spectral_function"}:
-        # shortened as the spectrum name was too long
+    elif base_name == {"offdiagonal_spectral_function_plus", "offdiagonal_spectral_function_minus"}:
         ws, spectrum, info = get_offdiagonal_spectral_function_spectra(config=config, limited_qs=limited_qs)
-
-    # the following are position spectra that do not use the lanczos method --separate them completely?
-    # elif base_name in ['hole_correlations', 'Sz_correlations']:
-    #     ws, spectrum = get_hole_spin_projection_correlations(input_processor.hamiltonian_params,
-    #         input_processor.eigenpair_params, input_processor.spectrum_params, loggers=loggers)
-    #     info = {'fixed_distances': input_processor.spectrum_params.fixed_distances}
-
-    # elif base_name == 'singlet-singlet':
-    #     fixed_distances = input_processor.spectrum_params.fixed_distances
-    #     ws, spectrum = get_singlet_singlet_correlations(input_processor.hamiltonian_params,
-    #         input_processor.eigenpair_params, input_processor.spectrum_params, loggers=loggers)
-    #     info = {'fixed_distances': fixed_distances}
-
     else:
         raise ValueError(f"{base_name} is not supported")
     return Spectrum(ws, spectrum, config, info)
 
 
-def get_Szq_spectra(config: Config, limited_qs: bool):
+def get_position_correlations(config: configs.Full_Position_Correlation_Config):
+    base_name = config.correlations.name
+    if base_name in {"hole_correlations", "Sz_correlations"}:
+        ws, spectrum = position_correlations.get_hole_spin_projection_correlations(config)
+
+    elif base_name == "singlet-singlet":
+        ws, spectrum = position_correlations.get_singlet_singlet_correlations(config)
+
+    info = {"fixed_distances": config.correlations.fixed_distances}
+    return Spectrum(ws, spectrum, config, info)
+
+
+def get_Szq_spectra(config: configs.Full_Spectrum_Config, limited_qs: bool):
     config = copy.deepcopy(config)
     mkx, qxs, qys = get_mkx_qxs_qys(config, limited_qs=False)  # We conditionally limit qs ourselves later.
     qs_list = product(qxs, qys)
@@ -119,14 +132,13 @@ def get_Szq_spectra(config: Config, limited_qs: bool):
     return ws, spectra, {"qs_list": qs_list}
 
 
-def get_spectral_function_spectra(config: Config, limited_qs: bool):
+def get_spectral_function_spectra(config: configs.Full_Spectrum_Config, limited_qs: bool):
     config = copy.deepcopy(config)
     mkx, qxs, qys = get_mkx_qxs_qys(config=config, limited_qs=limited_qs)
     plus_minus_conditions = [
-        ("plus", config.hamiltonian.num_holes > 0),
-        ("minus", config.hamiltonian.num_holes < config.hamiltonian.num_nodes),
+        (configs.Spectrum_Name.SPECTRAL_FUNCTION_PLUS, config.hamiltonian.num_holes > 0),
+        (configs.Spectrum_Name.SPECTRAL_FUNCTION_MINUS, config.hamiltonian.num_holes < config.hamiltonian.num_nodes),
     ]
-    base_name = config.spectrum.name
     qs_list = list(product(qxs, qys))  # Why do i get empty plots without the list?
     shape = [sum([i[1] for i in plus_minus_conditions]), len(qs_list), config.spectrum.omega_steps]
     spectra = np.empty(shape, dtype=float)
@@ -135,21 +147,21 @@ def get_spectral_function_spectra(config: Config, limited_qs: bool):
         if limited_qs and qx > mkx // 2 + 1:
             continue  # TODO: this is inconsistent with get_Szq_spectra
         qs = np.array([qx, qy], dtype=int)  # np.int32)
-        for o, (suffix, condition) in enumerate(plus_minus_conditions):
+        for o, (name, condition) in enumerate(plus_minus_conditions):
             if not condition:
                 continue
-            if suffix == "minus":  # TODO: Fragile to change of suffix order.
+            if name == configs.Spectrum_Name.SPECTRAL_FUNCTION_MINUS:  # TODO: Fragile to change of suffix order.
                 # qs in calculation refer to how the state's momentum changes,
                 # qs in params file refer to the removed electron's momentum,
                 # which is the standard for index of annihilation operator
                 qs = -qs
             config.spectrum.operator_symmetry_qs = {"leg": qs[0], "rung": qs[1] % 2}
-            config.spectrum.name = f"{base_name}_{suffix}"
+            config.spectrum.name = name
             ws[o, i, :], spectra[o, i, :] = get_spectrum(config)
     return ws, spectra, {"qs_list": qs_list}
 
 
-def get_offdiagonal_spectral_function_spectra(config: Config, limited_qs: bool):
+def get_offdiagonal_spectral_function_spectra(config: configs.Full_Spectrum_Config, limited_qs: bool):
     raise NotImplementedError()
     # config = copy.deepcopy(config)
     # mkx, qxs, qys = get_mkx_qxs_qys(config=config, limited_qs=limited_qs)
@@ -171,10 +183,10 @@ def get_offdiagonal_spectral_function_spectra(config: Config, limited_qs: bool):
     # return ws, spectra, {'qs_list': qs_list}
 
 
-def get_mkx_qxs_qys(config: Config, limited_qs: bool):
+def get_mkx_qxs_qys(config: configs.Limited_Spectrum_Config, limited_qs: bool):
     mkx = config.hamiltonian.num_rungs
-    input_qs = config.spectrum.operator_symmetry_qs
-    if input_qs is None:
+    input_qs = None  # config.spectrum.operator_symmetry_qs
+    if input_qs is None:  # FIXME: Not possible anymore!
         if limited_qs:
             qxs = range(mkx // 2 + 1)
         else:
@@ -187,6 +199,11 @@ def get_mkx_qxs_qys(config: Config, limited_qs: bool):
     return mkx, qxs, qys
 
 
-def plot_excitation_spectrum(config: Config, show: bool = False, **kwargs) -> None:
+def plot_excitation_spectrum(config: configs.Full_Spectrum_Config, show: bool = False, **kwargs) -> None:
     spectrum = get_excitation_spectrum(config=config, **kwargs)
     choose_plot(name=config.spectrum.name, spectrum=spectrum, show=show)
+
+
+def plot_position_correlation(config: configs.Full_Position_Correlation_Config, show: bool = False) -> None:
+    spectrum = get_position_correlations(config=config)
+    choose_plot(name=config.correlations.name, spectrum=spectrum, show=show)

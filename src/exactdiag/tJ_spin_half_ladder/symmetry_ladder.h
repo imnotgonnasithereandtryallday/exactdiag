@@ -85,18 +85,23 @@ class Symmetries_Single_Spin_Half_2leg_Ladder: public I_Symmetry_Generator { // 
     int get_basis_length() const override {
         return this->num_nodes;
     }
-    pos_int get_index_by_relative_index(int initial_index, int relative_index) const {
+    pos_int get_index_by_relative_index(int initial_index, int relative_index) const override {
+        // TODO: Profile how much the python_mods cost -- should we require inputs within bounds from the caller?
+        initial_index = python_mod(initial_index, this->num_nodes);
+        relative_index = python_mod(relative_index, this->num_nodes);
         pos_int leg = initial_index / 2 + relative_index / 2;
         pos_int rung = (initial_index + relative_index) % 2;
         return python_mod(2*leg + rung, this->num_nodes);
     }
     pos_int get_index_by_relative_shift(int initial_index, const int* relative_shift) const override {
+        initial_index = python_mod(initial_index, this->num_nodes);
         pos_int leg = initial_index / 2 + relative_shift[0];
-        pos_int rung = (initial_index + (relative_shift[1] % 2)) % 2;
+        pos_int rung = python_mod(initial_index + (relative_shift[1] % 2), 2);
         return python_mod(2*leg + rung, this->num_nodes);
     }
 
     void get_unit_shifts_from_index(int index, int* shifts) const override {
+        index = python_mod(index, this->num_nodes);
         shifts[0] = index / 2;
         shifts[1] = index % 2;
         // TODO: does something like std::tie(shifts[0], shifts[1]) = std::div(index, 2); work?

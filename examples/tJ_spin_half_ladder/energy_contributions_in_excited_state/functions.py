@@ -300,7 +300,7 @@ class Excited_State_Properties:
 
 
 def calculate_excited_state_properties(
-    config: configs.Config,
+    config: configs.Full_Spectrum_Config,
     j_to_ts: list[float],
     num_excited_states: int,
     verbose: bool,

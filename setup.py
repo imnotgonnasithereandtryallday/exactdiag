@@ -79,6 +79,7 @@ def _get_cythonized_extension_modules(enable_profiling):
             "matrix_element_functions",
             "symmetry",
             "matrix_setup",
+            "position_correlations"
         ]),
     ]
     extensions = []

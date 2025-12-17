@@ -18,7 +18,7 @@ type Eigenvalues = Float[Array, "num_eigenpairs"]  # noqa: F821 - this is not a 
 type Eigenvectors = Complex[Array, "basis_size, num_eigenpairs"]  # noqa: F821 - this is not a forward type declaration
 
 
-def get_lowest_eigenpairs(config: gc.Combined_Config_Base) -> tuple[Eigenvalues, Eigenvectors]:
+def get_lowest_eigenpairs(config: gc.Eigenpair_Config) -> tuple[Eigenvalues, Eigenvectors]:
     """Return the eigenpairs by loading or calculating and saving."""
     _logger.debug(f"Getting lowest eigenpairs with {config}.")
     eigvals, eigvecs = load_calculate_save(
@@ -50,7 +50,7 @@ def save_eigenpairs(eigenpairs, vals_path: pathlib.Path, vecs_path: pathlib.Path
     _logger.debug(f"saved eigenpairs to {vals_path!s}, {vecs_path!s}")
 
 
-def calculate_eigenpairs(config: gc.Combined_Config_Base):  # TODO: type retval
+def calculate_eigenpairs(config: gc.Eigenpair_Config):  # TODO: type retval
     # eigvecs[:, i] is the normalized eigenvector corresponding to the eigenvalue eigvals[i]
     hamiltonian = config.hamiltonian.setup()()
     num_rows = hamiltonian.shape[0]
@@ -121,7 +121,7 @@ def diagonalize_IRLM(num_eigenpairs, operator, is_symmetric=False, num_added_vec
     return params.extract(True), i
 
 
-def get_spectrum(config: gc.Combined_Config_Base, suffix: str = ""):
+def get_spectrum(config: gc.Full_Spectrum_Config_Base, suffix: str = ""):
     # suffix - operator_name_suffix for figure file name.
     # TODO: typing.
     def calculate(**kwargs):

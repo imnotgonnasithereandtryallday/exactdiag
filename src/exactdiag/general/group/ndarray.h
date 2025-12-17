@@ -135,7 +135,7 @@ struct ndarray {
 
     template <std::convertible_to<size_t>... T2>
     size_t get_flattened_index(const T2&... indices) const {
-        vector<size_t> remaining_shape_reversed = vector<size_t>(this->shape.rend(), this->shape.rbegin()); // FIXME: this should be rbegin, rend?
+        vector<size_t> remaining_shape_reversed = vector<size_t>(this->shape.rbegin(), this->shape.rend());
         return _flattened_index_iteration(this->size, remaining_shape_reversed, indices...);
     }
     template <std::convertible_to<size_t>... T2>
